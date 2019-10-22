@@ -123,7 +123,7 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows):
 
     residue_plotting_coordinates = {}
     for k, v in intra_column_y_coordinates.items():
-        residue_plotting_coordinates[columns_x_coordinates[k - 1]] = v
+        residue_plotting_coordinates[k] = [columns_x_coordinates[k - 1], v]
 
     return residue_plotting_coordinates
 
