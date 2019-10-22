@@ -212,6 +212,7 @@ def main(args):
 
     for col_id, coords in residue_plotting_coordinates.items():
         residue_names = [r for r in residue_names_to_plot if r[0] == chain_column_id_mapping[col_id]]
+        residue_names = sorted(residue_names, key=lambda x: int(x[3:]))
         x = coords[0]
 
         for y, name in zip(coords[1], residue_names):
