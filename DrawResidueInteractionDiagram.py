@@ -81,20 +81,25 @@ def generate_residue_names_to_plot(control_file_data_frame, residues_decomp_tabl
 
 
 def generate_column_x_coordinates(n_chains):
-    middle = WIDTH / 2
-    columns_x_coordinates = []
-
-    if n_chains % 2 == 1:
-        left_most_column_x = middle - ((n_chains // 2) * COL_SPACING)
-
-        for c in range(n_chains):
-            columns_x_coordinates.append(left_most_column_x + (c * COL_SPACING))
-    else:
-        left_most_column_x = middle - (COL_SPACING / 2) - (((n_chains / 2) - 1) * COL_SPACING)
-        for c in range(n_chains):
-            columns_x_coordinates.append(left_most_column_x + (c * COL_SPACING))
+    x_middle = WIDTH / 2
+    columns_x_coordinates = generate_coordinate_spread(x_middle, n_chains, COL_SPACING)
 
     return columns_x_coordinates
+
+
+def generate_coordinate_spread(middle, n, spacing):
+    coordinate_offsets = []
+    if n % 2 == 1:
+        left_most_column_x = middle - ((n // 2) * spacing)
+
+        for c in range(n):
+            coordinate_offsets.append(left_most_column_x + (c * spacing))
+    else:
+        left_most_column_x = middle - (spacing / 2) - (((n / 2) - 1) * spacing)
+        for c in range(n):
+            coordinate_offsets.append(left_most_column_x + (c * spacing))
+    return coordinate_offsets
+
 
 
 def main(args):
