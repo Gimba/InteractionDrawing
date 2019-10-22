@@ -34,6 +34,32 @@ MARGIN = 100
 FONT_SIZE = 24
 DASH_SIZE = 10
 
+res_codes = {}
+res_codes['ALA'] = 'A'
+res_codes['ARG'] = 'R'
+res_codes['ASN'] = 'N'
+res_codes['ASP'] = 'D'
+res_codes['CYS'] = 'C'
+res_codes['CYX'] = 'C'
+res_codes['GLU'] = 'E'
+res_codes['GLN'] = 'Q'
+res_codes['GLY'] = 'G'
+res_codes['HIS'] = 'H'
+res_codes['HIE'] = 'H'
+res_codes['HID'] = 'H'
+res_codes['HIP'] = 'H'
+res_codes['ILE'] = 'I'
+res_codes['LEU'] = 'L'
+res_codes['LYS'] = 'K'
+res_codes['MET'] = 'M'
+res_codes['PHE'] = 'F'
+res_codes['PRO'] = 'P'
+res_codes['SER'] = 'S'
+res_codes['THR'] = 'T'
+res_codes['TRP'] = 'W'
+res_codes['TYR'] = 'Y'
+res_codes['VAL'] = 'V'
+
 
 def read_control_file(file_name):
     data_frame = pd.read_csv(file_name)
@@ -77,7 +103,8 @@ def generate_residue_names_to_plot(control_file_data_frame, residues_decomp_tabl
 
     residue_names = []
     for _, row in selected_rows.iterrows():
-        residue_names.append('{}:{} {}'.format(row.Chain, row.Id.split()[0], row.Legend))
+        amino_acid = res_codes[row.Id.split()[0]]
+        residue_names.append('{}:{}{}'.format(row.Chain, amino_acid, row.Legend))
     return selected_rows, residue_names
 
 
@@ -187,7 +214,7 @@ def main(args):
         residue_names = [r for r in residue_names_to_plot if r[0] == chain_column_id_mapping[col_id]]
         x = coords[0]
 
-        for y, name in zip(coords[1], residue_names_to_plot):
+        for y, name in zip(coords[1], residue_names):
             draw_residue(ctx, x, y, name, 'green')
 
 
