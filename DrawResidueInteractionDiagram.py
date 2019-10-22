@@ -128,8 +128,8 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows):
     return residue_plotting_coordinates
 
 
-def draw_residue(ctx, x, y, text, colour, chain):
-    # ctx.set_source_rgb (*colour_residue(text, colour))
+def draw_residue(ctx, x, y, text, colour):
+    ctx.set_source_rgb(1, 0, 1)
     ctx.save()
     ctx.translate(x, y)
     ctx.scale(RES_RADIUS, RES_RADIUS / 2.)
@@ -139,10 +139,10 @@ def draw_residue(ctx, x, y, text, colour, chain):
     ctx.set_source_rgb(0, 0, 0)
     # if chain != '':
     #     text = chain + ':' + text
-    # (x_bearing, y_bearing, add_width, height, x_advance, y_advance) = ctx.text_extents("I")
-    # (x_bearing, y_bearing, width, height, x_advance, y_advance) = ctx.text_extents(text)
-    # ctx.move_to(x-(width+add_width)/2, y+height/2)
-    # ctx.show_text(text)
+    (x_bearing, y_bearing, add_width, height, x_advance, y_advance) = ctx.text_extents("I")
+    (x_bearing, y_bearing, width, height, x_advance, y_advance) = ctx.text_extents(text)
+    ctx.move_to(x - (width + add_width) / 2, y + height / 2)
+    ctx.show_text(text)
 
     # ctx.rectangle(x-width/2-2, y-height/2-2, width+4, height+4)
     # ctx.stroke()
@@ -180,8 +180,15 @@ def main(args):
     # calculate where the residues should be plotted for every column
     residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows)
 
-    chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Chain').to_dict()[
-        'Col']
+    chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Col').to_dict()[
+        'Chain']
+
+    for col_id, coords in residue_plotting_coordinates.items():
+        residue_names = [r for r in residue_names_to_plot if r[0] == chain_column_id_mapping[col_id]]
+        x = coords[0]
+
+        for y, name in zip(coords[1], residue_names_to_plot):
+            draw_residue(ctx, x, y, name, 'green')
 
 
 if __name__ == '__main__':
