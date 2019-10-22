@@ -60,6 +60,13 @@ res_codes['TRP'] = 'W'
 res_codes['TYR'] = 'Y'
 res_codes['VAL'] = 'V'
 
+# hydrophobic colors
+res_colours = {}
+res_colours['FIWLVM'] = [1, 0, 0]
+res_colours['YCA'] = [1, 0.5, 0.5]
+res_colours['THGSQ'] = [0, 1, 0]
+res_colours['RKNEPD'] = [0, 1, 1]
+
 
 def read_control_file(file_name):
     data_frame = pd.read_csv(file_name)
@@ -155,8 +162,14 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows):
     return residue_plotting_coordinates
 
 
-def draw_residue(ctx, x, y, text, colour):
-    ctx.set_source_rgb(1, 0, 1)
+def generate_amino_acid_colour(amino_acid_code):
+    colour = [v for k, v in res_colours.items() if amino_acid_code in k][0]
+    return colour
+
+
+def draw_residue(ctx, x, y, text):
+    colour = generate_amino_acid_colour(text[2])
+    ctx.set_source_rgb(colour[0], colour[1], colour[2])
     ctx.save()
     ctx.translate(x, y)
     ctx.scale(RES_RADIUS, RES_RADIUS / 2.)
@@ -214,9 +227,8 @@ def main(args):
         residue_names = [r for r in residue_names_to_plot if r[0] == chain_column_id_mapping[col_id]]
         residue_names = sorted(residue_names, key=lambda x: int(x[3:]))
         x = coords[0]
-
         for y, name in zip(coords[1], residue_names):
-            draw_residue(ctx, x, y, name, 'green')
+            draw_residue(ctx, x, y, name)
 
 
 if __name__ == '__main__':
