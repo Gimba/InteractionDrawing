@@ -21,6 +21,7 @@ __docformat__ = "restructuredtext en"
 import argparse
 import sys
 
+import cairo
 import pandas as pd
 
 WIDTH, HEIGHT = 1500, 3000
@@ -85,6 +86,11 @@ def main(args):
     check_residue_naming(residues_control_file, residues_decomp_table)
 
     hbonds_data_frame = read_hbonds_file(args.hbonds, int(args.thresh))
+
+    # create cairo surface for plotting
+    surface = cairo.PDFSurface(args.output, WIDTH, HEIGHT)
+    ctx = cairo.Context(surface)
+    ctx.set_font_size(FONT_SIZE)
 
 
 if __name__ == '__main__':
