@@ -18,11 +18,20 @@
 __author__ = 'Martin Rosellen'
 __docformat__ = "restructuredtext en"
 
+import argparse
 import sys
 
 
 def main():
-    pass
+    parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
+    parser.add_argument('control', help='The control file that determines which residues are plotted and how.')
+    parser.add_argument('decomp', help='The decomp table produced by PairwiseDecompTable.')
+    parser.add_argument('hbonds', help='The consolidated hbond file produced by ConsolidateHbonds.')
+    parser.add_argument('thresh', help='The minimum threshold for hbonds (in how many frames should the hbond be '
+                                       'present to be considered here).')
+    parser.add_argument('output', help='File name of the diagram (PDF format).')
+    parser.add_argument('summary', help='File name of the residue-wise energies table (CSV format).')
+    args = parser.parse_args()
 
 
 if __name__ == '__main__':
