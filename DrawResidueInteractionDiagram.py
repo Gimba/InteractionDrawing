@@ -19,6 +19,7 @@ __author__ = 'Martin Rosellen'
 __docformat__ = "restructuredtext en"
 
 import argparse
+import math
 import sys
 
 import cairo
@@ -120,8 +121,31 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows):
 
     intra_column_y_coordinates = generate_intra_column_y_coordinates(residues_in_each_column)
 
-    return columns_x_coordinates, intra_column_y_coordinates
+    residue_plotting_coordinates = {}
+    for k, v in intra_column_y_coordinates.items():
+        residue_plotting_coordinates[columns_x_coordinates[k - 1]] = v
 
+    return residue_plotting_coordinates
+
+
+def draw_residue(ctx, x, y, text, colour, chain):
+    # ctx.set_source_rgb (*colour_residue(text, colour))
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.scale(RES_RADIUS, RES_RADIUS / 2.)
+    ctx.arc(0., 0., 1., 0., 2 * math.pi)
+    ctx.restore()
+    ctx.fill()
+    ctx.set_source_rgb(0, 0, 0)
+    # if chain != '':
+    #     text = chain + ':' + text
+    # (x_bearing, y_bearing, add_width, height, x_advance, y_advance) = ctx.text_extents("I")
+    # (x_bearing, y_bearing, width, height, x_advance, y_advance) = ctx.text_extents(text)
+    # ctx.move_to(x-(width+add_width)/2, y+height/2)
+    # ctx.show_text(text)
+
+    # ctx.rectangle(x-width/2-2, y-height/2-2, width+4, height+4)
+    # ctx.stroke()
 
 def main(args):
     parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
