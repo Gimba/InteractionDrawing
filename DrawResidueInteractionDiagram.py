@@ -21,8 +21,17 @@ __docformat__ = "restructuredtext en"
 import argparse
 import sys
 
+import pandas as pd
 
-def main():
+
+def read_control_file(file_name):
+    data_frame = pd.read_csv(file_name)
+    chains = data_frame.Chain.unique()
+    residues_control_file = data_frame.Id.unique()
+    return data_frame, chains, residues_control_file
+
+
+def main(args):
     parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
     parser.add_argument('control', help='The control file that determines which residues are plotted and how.')
     parser.add_argument('decomp', help='The decomp table produced by PairwiseDecompTable.')
@@ -36,6 +45,8 @@ def main():
     args = parser.parse_args()
 
     compare_thresh = 0.5 if args.compare_thresh is None else float(args.compare_thresh)
+
+    control_file_data_frame, chains, residues_control_file = read_control_file(args.control)
 
 
 if __name__ == '__main__':
