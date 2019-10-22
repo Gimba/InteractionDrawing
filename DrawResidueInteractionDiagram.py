@@ -183,6 +183,15 @@ def draw_residue(ctx, x, y, text):
     ctx.show_text(text)
 
 
+def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx):
+    for col_id, coords in residue_plotting_coordinates.items():
+        residue_names = [r for r in residue_names_to_plot if r[0] == chain_column_id_mapping[col_id]]
+        residue_names = sorted(residue_names, key=lambda x: int(x[3:]))
+        x = coords[0]
+        for y, name in zip(coords[1], residue_names):
+            draw_residue(ctx, x, y, name)
+
+
 def main(args):
     parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
     parser.add_argument('control', help='The control file that determines which residues are plotted and how.')
@@ -218,12 +227,7 @@ def main(args):
     chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Col').to_dict()[
         'Chain']
 
-    for col_id, coords in residue_plotting_coordinates.items():
-        residue_names = [r for r in residue_names_to_plot if r[0] == chain_column_id_mapping[col_id]]
-        residue_names = sorted(residue_names, key=lambda x: int(x[3:]))
-        x = coords[0]
-        for y, name in zip(coords[1], residue_names):
-            draw_residue(ctx, x, y, name)
+    plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx)
 
 
 if __name__ == '__main__':
