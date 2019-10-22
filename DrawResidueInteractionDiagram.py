@@ -177,15 +177,10 @@ def draw_residue(ctx, x, y, text):
     ctx.restore()
     ctx.fill()
     ctx.set_source_rgb(0, 0, 0)
-    # if chain != '':
-    #     text = chain + ':' + text
     (x_bearing, y_bearing, add_width, height, x_advance, y_advance) = ctx.text_extents("I")
     (x_bearing, y_bearing, width, height, x_advance, y_advance) = ctx.text_extents(text)
     ctx.move_to(x - (width + add_width) / 2, y + height / 2)
     ctx.show_text(text)
-
-    # ctx.rectangle(x-width/2-2, y-height/2-2, width+4, height+4)
-    # ctx.stroke()
 
 
 def main(args):
