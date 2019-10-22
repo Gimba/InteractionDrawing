@@ -23,6 +23,15 @@ import sys
 
 import pandas as pd
 
+WIDTH, HEIGHT = 1500, 3000
+
+RES_RADIUS = 60
+COL_SPACING = 400
+RES_Y_SPACING = 80
+MARGIN = 100
+FONT_SIZE = 24
+DASH_SIZE = 10
+
 
 def read_control_file(file_name):
     data_frame = pd.read_csv(file_name)
