@@ -48,8 +48,8 @@ def read_decomp_table_file(file_name):
     data_frame.dropna(axis=0, how='all', inplace=True)
 
     # omit first cell which contains 'Res'
-    residues_decomp_table = data_frame.columns[:]
-    
+    residues_decomp_table = data_frame.index
+
     return data_frame, residues_decomp_table
 
 
@@ -69,6 +69,15 @@ def check_residue_naming(control_file_residues, decomp_table_residues):
         print('Control file contains all elements of decomp table.')
     else:
         print('Missing residues in control file {}'.format(decomp_residues_set - control_residues_set))
+
+
+def generate_residue_names_to_plot(control_file_data_frame, residues_decomp_table):
+    selected_rows = control_file_data_frame[control_file_data_frame.Id.isin(residues_decomp_table)]
+
+    residue_names = []
+    for _, row in selected_rows.iterrows():
+        residue_names.append('{}:{} {}'.format(row.Chain, row.Id.split()[0], row.Legend))
+    return selected_rows, residue_names
 
 
 def main(args):
@@ -96,6 +105,9 @@ def main(args):
     surface = cairo.PDFSurface(args.output, WIDTH, HEIGHT)
     ctx = cairo.Context(surface)
     ctx.set_font_size(FONT_SIZE)
+
+    selected_rows, residue_names_to_plot = generate_residue_names_to_plot(control_file_data_frame,
+                                                                          residues_decomp_table)
 
 
 if __name__ == '__main__':
