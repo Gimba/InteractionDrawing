@@ -38,6 +38,12 @@ def read_decomp_table_file(file_name):
     return data_frame, residues_decomp_table
 
 
+def read_hbonds_file(file_name, threshold):
+    data_frame = pd.read_csv(file_name, names=['res1', 'res2', 'n_frames'])
+    data_frame = data_frame[data_frame.n_frames > threshold]
+    return data_frame
+
+
 def check_residue_naming(control_file_residues, decomp_table_residues):
     control_residues_set = set(control_file_residues)
     decomp_residues_set = set(decomp_table_residues)
@@ -68,6 +74,8 @@ def main(args):
     decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp)
 
     check_residue_naming(residues_control_file, residues_decomp_table)
+
+    hbonds_data_frame = read_hbonds_file(args.hbonds, int(args.thresh))
 
 
 if __name__ == '__main__':
