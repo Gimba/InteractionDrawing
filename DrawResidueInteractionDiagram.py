@@ -38,24 +38,36 @@ def read_decomp_table_file(file_name):
     return data_frame, residues_decomp_table
 
 
+def check_residue_naming(control_file_residues, decomp_table_residues):
+    control_residues_set = set(control_file_residues)
+    decomp_residues_set = set(decomp_table_residues)
+
+    common_residues = control_residues_set & decomp_residues_set
+
+    if len(common_residues) == len(decomp_table_residues):
+        print('Control file contains all elements of decomp table.')
+    else:
+        print('Missing residues in control file {}'.format(decomp_residues_set - control_residues_set))
+
+
 def main(args):
     parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
     parser.add_argument('control', help='The control file that determines which residues are plotted and how.')
     parser.add_argument('decomp', help='The decomp table produced by PairwiseDecompTable.')
     parser.add_argument('hbonds', help='The consolidated hbond file produced by ConsolidateHbonds.')
     parser.add_argument('thresh', help='The minimum threshold for hbonds (in how many frames should the hbond be '
-                                       'present to be considered here).')
+                                       'present to be considered here).', default=150)
     parser.add_argument('output', help='File name of the diagram (PDF format).')
     parser.add_argument('summary', help='File name of the residue-wise energies table (CSV format).')
     parser.add_argument('-t', '--compare_thresh', help='Energy values must be higher than this threshold to be '
-                                                       'considered (default 0.5 kcal/mol)')
+                                                       'considered (default 0.5 kcal/mol).', default=0.5)
     args = parser.parse_args()
-
-    compare_thresh = 0.5 if args.compare_thresh is None else float(args.compare_thresh)
 
     control_file_data_frame, chains, residues_control_file = read_control_file(args.control)
 
     decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp)
+
+    check_residue_naming(residues_control_file, residues_decomp_table)
 
 
 if __name__ == '__main__':
