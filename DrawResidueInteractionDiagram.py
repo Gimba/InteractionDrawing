@@ -17,3 +17,13 @@
 
 __author__ = 'Martin Rosellen'
 __docformat__ = "restructuredtext en"
+
+import sys
+
+
+def main():
+    pass
+
+
+if __name__ == '__main__':
+    main(sys.argv)
