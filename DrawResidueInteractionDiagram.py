@@ -38,8 +38,8 @@ def read_decomp_table_file(file_name):
     data_frame.dropna(axis=0, how='all', inplace=True)
 
     # omit first cell which contains 'Res'
-    residues_decomp_table = data_frame.columns[:]
-    
+    residues_decomp_table = data_frame.index
+
     return data_frame, residues_decomp_table
 
 
