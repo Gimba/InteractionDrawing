@@ -31,7 +31,11 @@ def main():
                                        'present to be considered here).')
     parser.add_argument('output', help='File name of the diagram (PDF format).')
     parser.add_argument('summary', help='File name of the residue-wise energies table (CSV format).')
+    parser.add_argument('-t', '--compare_thresh', help='Energy values must be higher than this threshold to be '
+                                                       'considered (default 0.5 kcal/mol)')
     args = parser.parse_args()
+
+    compare_thresh = 0.5 if args.compare_thresh is None else float(args.compare_thresh)
 
 
 if __name__ == '__main__':
