@@ -147,6 +147,7 @@ def draw_residue(ctx, x, y, text, colour, chain):
     # ctx.rectangle(x-width/2-2, y-height/2-2, width+4, height+4)
     # ctx.stroke()
 
+
 def main(args):
     parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
     parser.add_argument('control', help='The control file that determines which residues are plotted and how.')
@@ -178,6 +179,9 @@ def main(args):
 
     # calculate where the residues should be plotted for every column
     residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows)
+
+    chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Chain').to_dict()[
+        'Col']
 
 
 if __name__ == '__main__':
