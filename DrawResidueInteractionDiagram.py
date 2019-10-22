@@ -23,6 +23,7 @@ import math
 import sys
 
 import cairo
+import numpy as np
 import pandas as pd
 
 WIDTH, HEIGHT = 1500, 3000
@@ -81,10 +82,22 @@ def read_decomp_table_file(file_name):
     # remove rows not containing any energy values
     data_frame.dropna(axis=0, how='all', inplace=True)
 
-    # omit first cell which contains 'Res'
     residues_decomp_table = data_frame.index
 
     return data_frame, residues_decomp_table
+
+
+def get_residue_interaction_tuples(decomp_table_data_frame):
+    interactions = {}
+
+    # only iterate over lower triangle of data frame matrix
+    temp_data = decomp_table_data_frame.mask(np.triu(np.ones(decomp_table_data_frame.shape, dtype=np.bool_)))
+    for row in temp_data.iterrows():
+        dict_val = row[1].dropna().to_dict()
+        if dict_val:
+            interactions[row[0]] = row[1].dropna().to_dict()
+
+    return interactions
 
 
 def read_hbonds_file(file_name, threshold):
@@ -228,6 +241,8 @@ def main(args):
         'Chain']
 
     plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx)
+
+    residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
 
 if __name__ == '__main__':
