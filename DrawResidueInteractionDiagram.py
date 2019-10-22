@@ -36,9 +36,9 @@ DASH_SIZE = 10
 
 def read_control_file(file_name):
     data_frame = pd.read_csv(file_name)
-    chains = data_frame.Chain.unique()
+    n_chains = len(data_frame.Chain.unique())
     residues_control_file = data_frame.Id.unique()
-    return data_frame, chains, residues_control_file
+    return data_frame, n_chains, residues_control_file
 
 
 def read_decomp_table_file(file_name):
@@ -80,6 +80,23 @@ def generate_residue_names_to_plot(control_file_data_frame, residues_decomp_tabl
     return selected_rows, residue_names
 
 
+def generate_column_x_coordinates(n_chains):
+    middle = WIDTH / 2
+    columns_x_coordinates = []
+
+    if n_chains % 2 == 1:
+        left_most_column_x = middle - ((n_chains // 2) * COL_SPACING)
+
+        for c in range(n_chains):
+            columns_x_coordinates.append(left_most_column_x + (c * COL_SPACING))
+    else:
+        left_most_column_x = middle - (COL_SPACING / 2) - (((n_chains / 2) - 1) * COL_SPACING)
+        for c in range(n_chains):
+            columns_x_coordinates.append(left_most_column_x + (c * COL_SPACING))
+
+    return columns_x_coordinates
+
+
 def main(args):
     parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
     parser.add_argument('control', help='The control file that determines which residues are plotted and how.')
@@ -93,7 +110,7 @@ def main(args):
                                                        'considered (default 0.5 kcal/mol).', default=0.5)
     args = parser.parse_args()
 
-    control_file_data_frame, chains, residues_control_file = read_control_file(args.control)
+    control_file_data_frame, n_chains, residues_control_file = read_control_file(args.control)
 
     decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp)
 
@@ -108,6 +125,8 @@ def main(args):
 
     selected_rows, residue_names_to_plot = generate_residue_names_to_plot(control_file_data_frame,
                                                                           residues_decomp_table)
+    # calculate where the columns should be placed
+    columns_x_coordinates = generate_column_x_coordinates(n_chains)
 
 
 if __name__ == '__main__':
