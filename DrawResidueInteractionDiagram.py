@@ -101,6 +101,27 @@ def generate_coordinate_spread(middle, n, spacing):
     return coordinate_offsets
 
 
+def generate_intra_column_y_coordinates(residues_in_each_chain):
+    col_max = max(residues_in_each_chain.values())
+    y_middle = HEIGHT / 2
+    col_y_coordinates = {}
+
+    for k, v in residues_in_each_chain.items():
+        col_y_coordinates[k] = generate_coordinate_spread(y_middle, v, RES_Y_SPACING)
+
+    return col_y_coordinates
+
+
+def generate_residue_plotting_coordinates(n_chains, selected_rows):
+    # calculate where the columns should be placed
+    columns_x_coordinates = generate_column_x_coordinates(n_chains)
+
+    residues_in_each_column = dict(selected_rows.Col.value_counts())
+
+    intra_column_y_coordinates = generate_intra_column_y_coordinates(residues_in_each_column)
+
+    return columns_x_coordinates, intra_column_y_coordinates
+
 
 def main(args):
     parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
@@ -130,8 +151,9 @@ def main(args):
 
     selected_rows, residue_names_to_plot = generate_residue_names_to_plot(control_file_data_frame,
                                                                           residues_decomp_table)
-    # calculate where the columns should be placed
-    columns_x_coordinates = generate_column_x_coordinates(n_chains)
+
+    # calculate where the residues should be plotted for every column
+    residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows)
 
 
 if __name__ == '__main__':
