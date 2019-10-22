@@ -31,6 +31,13 @@ def read_control_file(file_name):
     return data_frame, chains, residues_control_file
 
 
+def read_decomp_table_file(file_name):
+    data_frame = pd.read_csv(file_name)
+    # omit first cell which contains 'Res'
+    residues_decomp_table = data_frame.columns[1:]
+    return data_frame, residues_decomp_table
+
+
 def main(args):
     parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
     parser.add_argument('control', help='The control file that determines which residues are plotted and how.')
@@ -47,6 +54,8 @@ def main(args):
     compare_thresh = 0.5 if args.compare_thresh is None else float(args.compare_thresh)
 
     control_file_data_frame, chains, residues_control_file = read_control_file(args.control)
+
+    decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp)
 
 
 if __name__ == '__main__':
