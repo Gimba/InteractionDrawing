@@ -97,7 +97,12 @@ def get_residue_interaction_tuples(decomp_table_data_frame):
         if dict_val:
             interactions[row[0]] = row[1].dropna().to_dict()
 
-    return interactions
+    temp = {}
+    for k0, v_dict in interactions.items():
+        for k1, v1 in v_dict.items():
+            temp[k0 + " " + k1] = v1
+
+    return temp
 
 
 def read_hbonds_file(file_name, threshold):
