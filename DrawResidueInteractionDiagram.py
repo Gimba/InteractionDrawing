@@ -185,6 +185,29 @@ def generate_amino_acid_colour(amino_acid_code):
     return colour
 
 
+def change_residue_ids(control_file_data_frame, data_frame):
+    control_file_data_frame['residue_naming_new'] = control_file_data_frame.apply(lambda r: r.Chain + ':' + r.Legend,
+                                                                                  axis=1)
+    try:
+        df_index = np.asarray(data_frame.index)
+    except:
+        df_index = np.asarray([])
+    try:
+        df_columns = np.asarray(data_frame.columns)
+    except:
+        df_columns = np.asarray([])
+
+    for row in control_file_data_frame.iterrows():
+        if df_index.size > 0:
+            df_index[df_index == row[1].Id] = row[1].residue_naming_new
+        if df_columns.size > 0:
+            df_columns[df_columns == row[1].Id] = row[1].residue_naming_new
+        data_frame.replace(row[1].Id, row[1].residue_naming_new, inplace=True)
+    data_frame.set_index(df_index)
+    data_frame.columns = df_columns
+    return data_frame
+
+
 def draw_residue(ctx, x, y, text):
     colour = generate_amino_acid_colour(text[2])
     ctx.set_source_rgb(colour[0], colour[1], colour[2])
