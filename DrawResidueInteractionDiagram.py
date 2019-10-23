@@ -231,9 +231,9 @@ def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_col
         residue_names = [r for r in residue_names_to_plot if r[0] == chain_column_id_mapping[col_id]]
         residue_names = sorted(residue_names, key=lambda x: int(x[3:]))
         x = coords[0]
-        for y, name, res_id in zip(coords[1], residue_names, residues_decomp_table):
+        for y, name in zip(coords[1], residue_names):
             draw_residue(ctx, x, y, name)
-            residue_coordinates[res_id] = [x, y]
+            residue_coordinates[name] = [x, y]
 
     return residue_coordinates
 
