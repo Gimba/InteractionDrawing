@@ -129,7 +129,7 @@ def generate_residue_names_to_plot(control_file_data_frame, residues_decomp_tabl
     residue_names = []
     for _, row in selected_rows.iterrows():
         amino_acid = res_codes[row.Id.split()[0]]
-        residue_names.append('{}:{}{}'.format(row.Chain, amino_acid, row.Legend))
+        residue_names.append([row.Id, '{}:{}{}'.format(row.Chain, amino_acid, row.Legend)])
     return selected_rows, residue_names
 
 
@@ -228,12 +228,12 @@ def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_col
                   residues_decomp_table):
     residue_coordinates = {}
     for col_id, coords in residue_plotting_coordinates.items():
-        residue_names = [r for r in residue_names_to_plot if r[0] == chain_column_id_mapping[col_id]]
-        residue_names = sorted(residue_names, key=lambda x: int(x[3:]))
+        residue_names = [r for r in residue_names_to_plot if r[1][0] == chain_column_id_mapping[col_id]]
+        residue_names = sorted(residue_names, key=lambda x: int(x[1][3:]))
         x = coords[0]
         for y, name in zip(coords[1], residue_names):
-            draw_residue(ctx, x, y, name)
-            residue_coordinates[name] = [x, y]
+            draw_residue(ctx, x, y, name[1])
+            residue_coordinates[name[0]] = [x, y]
 
     return residue_coordinates
 
@@ -277,6 +277,8 @@ def main(args):
                                         ctx, residues_decomp_table)
 
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
+
+    plot_interactions(residue_interaction_tuples, residue_coordinates)
 
 
 if __name__ == '__main__':
