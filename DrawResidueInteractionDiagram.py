@@ -224,15 +224,16 @@ def draw_residue(ctx, x, y, text):
     ctx.show_text(text)
 
 
-def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx):
+def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx,
+                  residues_decomp_table):
     residue_coordinates = {}
     for col_id, coords in residue_plotting_coordinates.items():
         residue_names = [r for r in residue_names_to_plot if r[0] == chain_column_id_mapping[col_id]]
         residue_names = sorted(residue_names, key=lambda x: int(x[3:]))
         x = coords[0]
-        for y, name in zip(coords[1], residue_names):
+        for y, name, res_id in zip(coords[1], residue_names, residues_decomp_table):
             draw_residue(ctx, x, y, name)
-            residue_coordinates[name] = [x, y]
+            residue_coordinates[res_id] = [x, y]
 
     return residue_coordinates
 
@@ -273,7 +274,7 @@ def main(args):
         'Chain']
 
     residue_coordinates = plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
-                                        ctx)
+                                        ctx, residues_decomp_table)
 
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
