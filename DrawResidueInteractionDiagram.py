@@ -246,7 +246,13 @@ def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx):
         coord1 = residue_coordinates[res1]
         coord2 = residue_coordinates[res2]
         ctx.move_to(coord1[0], coord1[1])
-        ctx.set_line_width(1)
+
+        if energy > 0:
+            ctx.set_dash([DASH_SIZE])
+        else:
+            ctx.set_dash({})
+
+        ctx.set_line_width(abs(energy))
         ctx.line_to(coord2[0], coord2[1])
         ctx.stroke()
 
@@ -292,6 +298,10 @@ def main(args):
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
     plot_interactions(residue_interaction_tuples, residue_coordinates, ctx)
+
+    # replooting residues so that they overlay the interaction lines
+    plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
+                  ctx, residues_decomp_table)
 
 
 if __name__ == '__main__':
