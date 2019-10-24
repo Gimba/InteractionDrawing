@@ -239,6 +239,18 @@ def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_col
     return residue_coordinates
 
 
+def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx):
+    for r1, energy in residue_interaction_tuples.items():
+        res1 = r1[0:7].strip()
+        res2 = r1[7:].strip()
+        coord1 = residue_coordinates[res1]
+        coord2 = residue_coordinates[res2]
+        ctx.move_to(coord1[0], coord1[1])
+        ctx.set_line_width(1)
+        ctx.line_to(coord2[0], coord2[1])
+        ctx.stroke()
+
+
 def main(args):
     parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
     parser.add_argument('control', help='The control file that determines which residues are plotted and how.')
@@ -279,7 +291,7 @@ def main(args):
 
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
-    plot_interactions(residue_interaction_tuples, residue_coordinates)
+    plot_interactions(residue_interaction_tuples, residue_coordinates, ctx)
 
 
 if __name__ == '__main__':
