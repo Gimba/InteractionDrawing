@@ -90,9 +90,10 @@ def read_decomp_table_file(file_name):
 def get_residue_interaction_tuples(decomp_table_data_frame):
     interactions = {}
 
-    # only iterate over lower triangle of data frame matrix
-    temp_data = decomp_table_data_frame.mask(np.triu(np.ones(decomp_table_data_frame.shape, dtype=np.bool_)))
-    for row in temp_data.iterrows():
+    # only iterate over lower triangle of data frame matrix - Not used
+    # temp_data = decomp_table_data_frame.mask(np.triu(np.ones(decomp_table_data_frame.shape, dtype=np.bool_)))
+
+    for row in decomp_table_data_frame.iterrows():
         dict_val = row[1].dropna().to_dict()
         if dict_val:
             interactions[row[0]] = row[1].dropna().to_dict()
