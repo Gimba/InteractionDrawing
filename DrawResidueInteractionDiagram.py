@@ -241,13 +241,28 @@ def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_col
     return residue_coordinates
 
 
-def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx):
+def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds):
+    hbonds = list(hbonds.res1)
+
+    # added this ugly list here to check which interaction have already been painted
+    painted = []
     for r1, energy in residue_interaction_tuples.items():
+
         res1 = r1[0:7].strip()
         res2 = r1[7:].strip()
+
+        # continue if the flipped residue identifiers are in the ugly list
+        if res2 + ' ' + res1 in painted:
+            continue
+        painted.append(r1)
+
         coord1 = residue_coordinates[res1]
         coord2 = residue_coordinates[res2]
         ctx.move_to(coord1[0], coord1[1])
+        if r1 in hbonds:
+            ctx.set_source_rgb(1, 0, 0)
+        else:
+            ctx.set_source_rgb(0, 0, 0)
 
         if energy > 0:
             ctx.set_dash([DASH_SIZE])
@@ -299,7 +314,7 @@ def main(args):
 
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
-    plot_interactions(residue_interaction_tuples, residue_coordinates, ctx)
+    plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame)
 
     # replooting residues so that they overlay the interaction lines
     plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
