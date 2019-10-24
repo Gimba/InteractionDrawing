@@ -109,6 +109,8 @@ def get_residue_interaction_tuples(decomp_table_data_frame):
 def read_hbonds_file(file_name, threshold):
     data_frame = pd.read_csv(file_name, names=['res1', 'res2', 'n_frames'])
     data_frame = data_frame[data_frame.n_frames > threshold]
+    data_frame.res1 = data_frame.res1 + ' ' + data_frame.res2
+    data_frame.drop('res2', axis=1, inplace=True)
     return data_frame
 
 
