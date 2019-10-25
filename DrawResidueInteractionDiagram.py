@@ -76,12 +76,13 @@ def read_control_file(file_name):
     return data_frame, n_chains, residues_control_file
 
 
-def read_decomp_table_file(file_name):
+def read_decomp_table_file(file_name, cmpr):
     data_frame = pd.read_csv(file_name, index_col=0)
 
     # remove rows not containing any energy values
-    data_frame.dropna(axis=0, how='all', inplace=True)
-
+    if not cmpr:
+        data_frame.dropna(axis=0, how='all', inplace=True)
+        data_frame.dropna(axis=1, how='all', inplace=True)
     residues_decomp_table = data_frame.index
 
     return data_frame, residues_decomp_table
@@ -291,7 +292,7 @@ def main(args):
 
     control_file_data_frame, n_chains, residues_control_file = read_control_file(args.control)
 
-    decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp)
+    decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp, args.compare_file)
 
     if args.compare_file:
         compare_file_data_frame, residues_compare_file = read_decomp_table_file(args.compare_file)
