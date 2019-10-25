@@ -285,6 +285,8 @@ def main(args):
     parser.add_argument('summary', help='File name of the residue-wise energies table (CSV format).')
     parser.add_argument('-t', '--compare_thresh', help='Energy values must be higher than this threshold to be '
                                                        'considered (default 0.5 kcal/mol).', default=0.5)
+    parser.add_argument('-c', '--compare_file', help='only display interactions that differ from those in this file')
+
     args = parser.parse_args()
 
     control_file_data_frame, n_chains, residues_control_file = read_control_file(args.control)
