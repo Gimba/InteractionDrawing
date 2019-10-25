@@ -19,16 +19,61 @@ __author__ = 'Martin Rosellen'
 __docformat__ = "restructuredtext en"
 
 import argparse
+import math
 import sys
 
+import cairo
+import numpy as np
 import pandas as pd
+
+WIDTH, HEIGHT = 1500, 3000
+
+RES_RADIUS = 60
+COL_SPACING = 400
+RES_Y_SPACING = 80
+MARGIN = 100
+FONT_SIZE = 24
+DASH_SIZE = 10
+
+res_codes = {}
+res_codes['ALA'] = 'A'
+res_codes['ARG'] = 'R'
+res_codes['ASN'] = 'N'
+res_codes['ASP'] = 'D'
+res_codes['CYS'] = 'C'
+res_codes['CYX'] = 'C'
+res_codes['GLU'] = 'E'
+res_codes['GLN'] = 'Q'
+res_codes['GLY'] = 'G'
+res_codes['HIS'] = 'H'
+res_codes['HIE'] = 'H'
+res_codes['HID'] = 'H'
+res_codes['HIP'] = 'H'
+res_codes['ILE'] = 'I'
+res_codes['LEU'] = 'L'
+res_codes['LYS'] = 'K'
+res_codes['MET'] = 'M'
+res_codes['PHE'] = 'F'
+res_codes['PRO'] = 'P'
+res_codes['SER'] = 'S'
+res_codes['THR'] = 'T'
+res_codes['TRP'] = 'W'
+res_codes['TYR'] = 'Y'
+res_codes['VAL'] = 'V'
+
+# hydrophobic colors
+res_colours = {}
+res_colours['FIWLVM'] = [1, 0, 0]
+res_colours['YCA'] = [1, 0.5, 0.5]
+res_colours['THGSQ'] = [0, 1, 0]
+res_colours['RKNEPD'] = [0, 1, 1]
 
 
 def read_control_file(file_name):
     data_frame = pd.read_csv(file_name)
-    chains = data_frame.Chain.unique()
+    n_chains = len(data_frame.Chain.unique())
     residues_control_file = data_frame.Id.unique()
-    return data_frame, chains, residues_control_file
+    return data_frame, n_chains, residues_control_file
 
 
 def read_decomp_table_file(file_name):
@@ -37,15 +82,35 @@ def read_decomp_table_file(file_name):
     # remove rows not containing any energy values
     data_frame.dropna(axis=0, how='all', inplace=True)
 
-    # omit first cell which contains 'Res'
     residues_decomp_table = data_frame.index
 
     return data_frame, residues_decomp_table
 
 
+def get_residue_interaction_tuples(decomp_table_data_frame):
+    interactions = {}
+
+    # only iterate over lower triangle of data frame matrix - Not used
+    # temp_data = decomp_table_data_frame.mask(np.triu(np.ones(decomp_table_data_frame.shape, dtype=np.bool_)))
+
+    for row in decomp_table_data_frame.iterrows():
+        dict_val = row[1].dropna().to_dict()
+        if dict_val:
+            interactions[row[0]] = row[1].dropna().to_dict()
+
+    temp = {}
+    for k0, v_dict in interactions.items():
+        for k1, v1 in v_dict.items():
+            temp[k0 + " " + k1] = v1
+
+    return temp
+
+
 def read_hbonds_file(file_name, threshold):
     data_frame = pd.read_csv(file_name, names=['res1', 'res2', 'n_frames'])
     data_frame = data_frame[data_frame.n_frames > threshold]
+    data_frame.res1 = data_frame.res1 + ' ' + data_frame.res2
+    data_frame.drop('res2', axis=1, inplace=True)
     return data_frame
 
 
@@ -61,6 +126,154 @@ def check_residue_naming(control_file_residues, decomp_table_residues):
         print('Missing residues in control file {}'.format(decomp_residues_set - control_residues_set))
 
 
+def generate_residue_names_to_plot(control_file_data_frame, residues_decomp_table):
+    selected_rows = control_file_data_frame[control_file_data_frame.Id.isin(residues_decomp_table)]
+
+    residue_names = []
+    for _, row in selected_rows.iterrows():
+        amino_acid = res_codes[row.Id.split()[0]]
+        residue_names.append([row.Id, '{}:{}{}'.format(row.Chain, amino_acid, row.Legend)])
+    return selected_rows, residue_names
+
+
+def generate_column_x_coordinates(n_chains):
+    x_middle = WIDTH / 2
+    columns_x_coordinates = generate_coordinate_spread(x_middle, n_chains, COL_SPACING)
+
+    return columns_x_coordinates
+
+
+def generate_coordinate_spread(middle, n, spacing):
+    coordinate_offsets = []
+    if n % 2 == 1:
+        left_most_column_x = middle - ((n // 2) * spacing)
+
+        for c in range(n):
+            coordinate_offsets.append(left_most_column_x + (c * spacing))
+    else:
+        left_most_column_x = middle - (spacing / 2) - (((n / 2) - 1) * spacing)
+        for c in range(n):
+            coordinate_offsets.append(left_most_column_x + (c * spacing))
+    return coordinate_offsets
+
+
+def generate_intra_column_y_coordinates(residues_in_each_chain):
+    col_max = max(residues_in_each_chain.values())
+    y_middle = HEIGHT / 2
+    col_y_coordinates = {}
+
+    for k, v in residues_in_each_chain.items():
+        col_y_coordinates[k] = generate_coordinate_spread(y_middle, v, RES_Y_SPACING)
+
+    return col_y_coordinates
+
+
+def generate_residue_plotting_coordinates(n_chains, selected_rows):
+    # calculate where the columns should be placed
+    columns_x_coordinates = generate_column_x_coordinates(n_chains)
+
+    residues_in_each_column = dict(selected_rows.Col.value_counts())
+
+    intra_column_y_coordinates = generate_intra_column_y_coordinates(residues_in_each_column)
+
+    residue_plotting_coordinates = {}
+    for k, v in intra_column_y_coordinates.items():
+        residue_plotting_coordinates[k] = [columns_x_coordinates[k - 1], v]
+
+    return residue_plotting_coordinates
+
+
+def generate_amino_acid_colour(amino_acid_code):
+    colour = [v for k, v in res_colours.items() if amino_acid_code in k][0]
+    return colour
+
+
+def change_residue_ids(control_file_data_frame, data_frame):
+    control_file_data_frame['residue_naming_new'] = control_file_data_frame.apply(lambda r: r.Chain + ':' + r.Legend,
+                                                                                  axis=1)
+    try:
+        df_index = np.asarray(data_frame.index)
+    except:
+        df_index = np.asarray([])
+    try:
+        df_columns = np.asarray(data_frame.columns)
+    except:
+        df_columns = np.asarray([])
+
+    for row in control_file_data_frame.iterrows():
+        if df_index.size > 0:
+            df_index[df_index == row[1].Id] = row[1].residue_naming_new
+        if df_columns.size > 0:
+            df_columns[df_columns == row[1].Id] = row[1].residue_naming_new
+        data_frame.replace(row[1].Id, row[1].residue_naming_new, inplace=True)
+    data_frame.set_index(df_index)
+    data_frame.columns = df_columns
+    return data_frame
+
+
+def draw_residue(ctx, x, y, text):
+    colour = generate_amino_acid_colour(text[2])
+    ctx.set_source_rgb(colour[0], colour[1], colour[2])
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.scale(RES_RADIUS, RES_RADIUS / 2.)
+    ctx.arc(0., 0., 1., 0., 2 * math.pi)
+    ctx.restore()
+    ctx.fill()
+    ctx.set_source_rgb(0, 0, 0)
+    (x_bearing, y_bearing, add_width, height, x_advance, y_advance) = ctx.text_extents("I")
+    (x_bearing, y_bearing, width, height, x_advance, y_advance) = ctx.text_extents(text)
+    ctx.move_to(x - (width + add_width) / 2, y + height / 2)
+    ctx.show_text(text)
+
+
+def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx,
+                  residues_decomp_table):
+    residue_coordinates = {}
+    for col_id, coords in residue_plotting_coordinates.items():
+        residue_names = [r for r in residue_names_to_plot if r[1][0] == chain_column_id_mapping[col_id]]
+        residue_names = sorted(residue_names, key=lambda x: int(x[1][3:]))
+        x = coords[0]
+        for y, name in zip(coords[1], residue_names):
+            draw_residue(ctx, x, y, name[1])
+            residue_coordinates[name[0]] = [x, y]
+
+    return residue_coordinates
+
+
+def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds):
+    hbonds = list(hbonds.res1)
+
+    # added this ugly list here to check which interaction have already been painted
+    painted = []
+    for r1, energy in residue_interaction_tuples.items():
+
+        res1 = r1[0:7].strip()
+        res2 = r1[7:].strip()
+
+        # continue if the flipped residue identifiers are in the ugly list
+        if res2 + ' ' + res1 in painted:
+            continue
+        painted.append(r1)
+
+        coord1 = residue_coordinates[res1]
+        coord2 = residue_coordinates[res2]
+        ctx.move_to(coord1[0], coord1[1])
+        if r1 in hbonds:
+            ctx.set_source_rgb(1, 0, 0)
+        else:
+            ctx.set_source_rgb(0, 0, 0)
+
+        if energy > 0:
+            ctx.set_dash([DASH_SIZE])
+        else:
+            ctx.set_dash({})
+
+        ctx.set_line_width(abs(energy))
+        ctx.line_to(coord2[0], coord2[1])
+        ctx.stroke()
+
+
 def main(args):
     parser = argparse.ArgumentParser(description='Plot residue-wise interaction energies.')
     parser.add_argument('control', help='The control file that determines which residues are plotted and how.')
@@ -74,13 +287,38 @@ def main(args):
                                                        'considered (default 0.5 kcal/mol).', default=0.5)
     args = parser.parse_args()
 
-    control_file_data_frame, chains, residues_control_file = read_control_file(args.control)
+    control_file_data_frame, n_chains, residues_control_file = read_control_file(args.control)
 
     decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp)
 
     check_residue_naming(residues_control_file, residues_decomp_table)
 
     hbonds_data_frame = read_hbonds_file(args.hbonds, int(args.thresh))
+
+    # create cairo surface for plotting
+    surface = cairo.PDFSurface(args.output, WIDTH, HEIGHT)
+    ctx = cairo.Context(surface)
+    ctx.set_font_size(FONT_SIZE)
+
+    selected_rows, residue_names_to_plot = generate_residue_names_to_plot(control_file_data_frame,
+                                                                          residues_decomp_table)
+
+    # calculate where the residues should be plotted for every column
+    residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows)
+
+    chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Col').to_dict()[
+        'Chain']
+
+    residue_coordinates = plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
+                                        ctx, residues_decomp_table)
+
+    residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
+
+    plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame)
+
+    # replooting residues so that they overlay the interaction lines
+    plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
+                  ctx, residues_decomp_table)
 
 
 if __name__ == '__main__':
