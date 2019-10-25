@@ -293,6 +293,9 @@ def main(args):
 
     decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp)
 
+    if args.compare_file:
+        compare_file_data_frame, residues_compare_file = read_decomp_table_file(args.compare_file)
+
     check_residue_naming(residues_control_file, residues_decomp_table)
 
     hbonds_data_frame = read_hbonds_file(args.hbonds, int(args.thresh))
