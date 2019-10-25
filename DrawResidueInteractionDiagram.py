@@ -212,7 +212,7 @@ def change_residue_ids(control_file_data_frame, data_frame):
     return data_frame
 
 
-def draw_residue(ctx, x, y, text):
+def draw_residue(ctx, x, y, text, annotation=False):
     colour = generate_amino_acid_colour(text[2])
     ctx.set_source_rgb(colour[0], colour[1], colour[2])
     ctx.save()
@@ -222,22 +222,34 @@ def draw_residue(ctx, x, y, text):
     ctx.restore()
     ctx.fill()
     ctx.set_source_rgb(0, 0, 0)
+
     (x_bearing, y_bearing, add_width, height, x_advance, y_advance) = ctx.text_extents("I")
     (x_bearing, y_bearing, width, height, x_advance, y_advance) = ctx.text_extents(text)
+
     ctx.move_to(x - (width + add_width) / 2, y + height / 2)
     ctx.show_text(text)
 
+    if annotation:
+        ctx.move_to(x + (RES_RADIUS * 0.35), y - (RES_RADIUS * 0.35))
+        ctx.set_font_size(FONT_SIZE * 0.75)
+        ctx.show_text('{0:+.2f}'.format(annotation))
+        ctx.set_font_size(FONT_SIZE)
 
 def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx,
-                  residues_decomp_table):
+                  annotate_list=False):
     residue_coordinates = {}
     for col_id, coords in residue_plotting_coordinates.items():
         residue_names = [r for r in residue_names_to_plot if r[1][0] == chain_column_id_mapping[col_id]]
         residue_names = sorted(residue_names, key=lambda x: int(x[1][3:]))
         x = coords[0]
-        for y, name in zip(coords[1], residue_names):
-            draw_residue(ctx, x, y, name[1])
-            residue_coordinates[name[0]] = [x, y]
+        if annotate_list:
+            for y, name, annotation in zip(coords[1], residue_names, annotate_list):
+                draw_residue(ctx, x, y, name[1], annotation)
+                residue_coordinates[name[0]] = [x, y]
+        else:
+            for y, name in zip(coords[1], residue_names):
+                draw_residue(ctx, x, y, name[1])
+                residue_coordinates[name[0]] = [x, y]
 
     return residue_coordinates
 
@@ -287,8 +299,11 @@ def main(args):
     parser.add_argument('-t', '--compare_thresh', help='Energy values must be higher than this threshold to be '
                                                        'considered (default 0.5 kcal/mol).', default=0.5)
     parser.add_argument('-c', '--compare_file', help='only display interactions that differ from those in this file')
+    parser.add_argument('-a', '--annotate', help='annotate residues with energy values')
 
     args = parser.parse_args()
+
+    args.compare_thresh = float(args.compare_thresh)
 
     control_file_data_frame, n_chains, residues_control_file = read_control_file(args.control)
 
@@ -328,7 +343,6 @@ def main(args):
         # redefine residues to plot
         residues_decomp_table = decomp_table_data_frame.index
 
-
     check_residue_naming(residues_control_file, residues_decomp_table)
 
     hbonds_data_frame = read_hbonds_file(args.hbonds, int(args.thresh))
@@ -348,15 +362,20 @@ def main(args):
         'Chain']
 
     residue_coordinates = plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
-                                        ctx, residues_decomp_table)
+                                        ctx)
 
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
     plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame)
 
-    # replooting residues so that they overlay the interaction lines
+    # replotting residues so that they overlay the interaction lines
+    if args.annotate:
+        gains_losses = list(decomp_table_data_frame.agg(lambda x: x.sum()))
+    else:
+        gains_losses = False
+
     plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
-                  ctx, residues_decomp_table)
+                  ctx, gains_losses)
 
 
 if __name__ == '__main__':
