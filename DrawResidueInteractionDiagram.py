@@ -307,7 +307,8 @@ def main(args):
             # check if residue ids differ
             for k, [cmp_id, decomp_id] in enumerate(zip(cmp_index, decomp_index)):
                 if cmp_id != decomp_id:
-                    print(cmp_id, decomp_id)
+                    print('Differing amino acid code for residue', cmp_id.split()[1], ':', cmp_id.split()[0],
+                          '(comp file)', decomp_id.split()[0], '(decomp) --> will plot', decomp_id.split()[0])
                     cmp_index[k] = decomp_id
 
             # replace index and column headers
