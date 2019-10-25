@@ -314,6 +314,18 @@ def main(args):
             compare_file_data_frame.index = cmp_index
             compare_file_data_frame.columns = cmp_index
 
+        # substracting data frames (with fill_value=0 'nan's get set to zero for substraction)
+        decomp_table_data_frame = decomp_table_data_frame.subtract(compare_file_data_frame, fill_value=0)
+
+        # apply threshold
+        decomp_table_data_frame = decomp_table_data_frame.mask(abs(decomp_table_data_frame) <= args.compare_thresh)
+
+        # remove colmuns and rows only containing nan
+        decomp_table_data_frame.dropna(axis=0, how='all', inplace=True)
+        decomp_table_data_frame.dropna(axis=1, how='all', inplace=True)
+
+        # redefine residues to plot
+        residues_decomp_table = decomp_table_data_frame.index
 
 
     check_residue_naming(residues_control_file, residues_decomp_table)
