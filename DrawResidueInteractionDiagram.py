@@ -295,7 +295,26 @@ def main(args):
     decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp, args.compare_file)
 
     if args.compare_file:
-        compare_file_data_frame, residues_compare_file = read_decomp_table_file(args.compare_file)
+        compare_file_data_frame, residues_compare_file = read_decomp_table_file(args.compare_file, args.compare_file)
+
+        # check if index of compare file data frame contains a mutation of a residue on base of the residue
+        # numbering, this code is to only replace mutated residues (does not really work properly so far,
+        # since the assumption here is that both indices are in the same order and have the same length)
+        if not compare_file_data_frame.index.equals(decomp_table_data_frame.index):
+            cmp_index = list(compare_file_data_frame)
+            decomp_index = list(decomp_table_data_frame)
+
+            # check if residue ids differ
+            for k, [cmp_id, decomp_id] in enumerate(zip(cmp_index, decomp_index)):
+                if cmp_id != decomp_id:
+                    print(cmp_id, decomp_id)
+                    cmp_index[k] = decomp_id
+
+            # replace index and column headers
+            compare_file_data_frame.index = cmp_index
+            compare_file_data_frame.columns = cmp_index
+
+
 
     check_residue_naming(residues_control_file, residues_decomp_table)
 
