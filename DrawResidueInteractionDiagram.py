@@ -254,16 +254,22 @@ def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_col
     return residue_coordinates
 
 
-def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds):
+def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds, residue_to_highlight=False):
     hbonds = list(hbonds.res1)
 
     # added this ugly list here to check which interaction have already been painted
     painted = []
+
+    # maintain a list that holds the residues that are in contact with the one we want to highlight
+    residues_to_highlight = []
     for r1, energy in residue_interaction_tuples.items():
 
         res1 = r1[0:7].strip()
         res2 = r1[7:].strip()
 
+        if residue_to_highlight.iloc[0].Id in [res1, res2]:
+            residues_to_highlight.append(res1)
+            residues_to_highlight.append(res2)
         # continue if the flipped residue identifiers are in the ugly list
         if res2 + ' ' + res1 in painted:
             continue
@@ -288,6 +294,8 @@ def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbon
         ctx.set_line_width(abs(energy))
         ctx.line_to(coord2[0], coord2[1])
         ctx.stroke()
+
+    return list(set(residues_to_highlight))
 
 
 def main(args):
@@ -378,8 +386,9 @@ def main(args):
 
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
-    plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame)
-
+    residues_to_highlight = plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame,
+                                              residue_to_highlight)
+    print(residues_to_highlight)
     # replotting residues so that they overlay the interaction lines
     if args.annotate:
         gains_losses = list(decomp_table_data_frame.agg(lambda x: x.sum()))
