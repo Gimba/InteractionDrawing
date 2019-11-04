@@ -76,7 +76,7 @@ def read_control_file(file_name):
     return data_frame, n_chains, residues_control_file
 
 
-def read_decomp_table_file(file_name, cmpr, exclusive=""):
+def read_decomp_table_file(file_name, cmpr, residue_to_highlight, exclusive=""):
     data_frame = pd.read_csv(file_name, index_col=0)
 
     # remove rows not containing any energy values
@@ -86,11 +86,11 @@ def read_decomp_table_file(file_name, cmpr, exclusive=""):
 
     # only keep column that contains selected residue
     if exclusive:
-        data_frame = data_frame.loc[:, 'TYR  22']
+        data_frame = data_frame.loc[:, residue_to_highlight]
         # since only one column is selected data_frame will be of type Series. This causes problems later and
         # therefore it get transformed into a dataframe object again
         data_frame = data_frame.to_frame()
-        data_frame = data_frame.drop(data_frame[data_frame['TYR  22'] == 0].index)
+        data_frame = data_frame.drop(data_frame[data_frame[residue_to_highlight] == 0].index)
     residues_decomp_table = data_frame.index
 
     return data_frame, residues_decomp_table
@@ -121,7 +121,7 @@ def get_highlight_residues(residue_interaction_tuples, residue_to_highlight):
         res1 = k[0:7].strip()
         res2 = k[7:].strip()
 
-        if residue_to_highlight.iloc[0].Id in [res1, res2]:
+        if residue_to_highlight is None in [res1, res2]:
             residue_selection.append(res1)
             residue_selection.append(res2)
 
@@ -165,7 +165,7 @@ def generate_column_x_coordinates(n_chains):
 
 
 def generate_coordinate_circle(middle, r, n=100):
-    return [(math.cos(2 * math.pi / n * (x + middle)) * r, math.sin(2 * math.pi / n * (x + middle)) * r) for x in
+    return [[(math.cos(2 * math.pi / n * (x)) * r) + middle, (math.sin(2 * math.pi / n * x) * r) + middle] for x in
             range(0, n + 1)]
 
 
@@ -365,12 +365,13 @@ def main(args):
     else:
         residue_to_highlight = False
 
-    if not residue_to_highlight.iloc[0].Id and args.e:
+    if residue_to_highlight is None and args.e:
         print('Plot contacts to highlight residue exclusively selected but residue not specified. Please specify '
               'residue using -m. Exiting')
         exit()
 
-    decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp, args.compare_file, args.e)
+    decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp, args.compare_file,
+                                                                            residue_to_highlight.iloc[0].Id, args.e)
 
     if args.compare_file:
         compare_file_data_frame, residues_compare_file = read_decomp_table_file(args.compare_file, args.compare_file)
