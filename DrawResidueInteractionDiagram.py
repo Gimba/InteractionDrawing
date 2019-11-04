@@ -181,7 +181,7 @@ def generate_intra_column_y_coordinates(residues_in_each_chain):
     return col_y_coordinates
 
 
-def generate_residue_plotting_coordinates(n_chains, selected_rows):
+def generate_residue_plotting_coordinates(n_chains, selected_rows, exclusive=False):
     # calculate where the columns should be placed
     columns_x_coordinates = generate_column_x_coordinates(n_chains)
 
@@ -191,7 +191,7 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows):
 
     residue_plotting_coordinates = {}
     for k, v in intra_column_y_coordinates.items():
-        residue_plotting_coordinates[k] = [columns_x_coordinates[k - 1], v]
+        residue_plotting_coordinates[k] = [[columns_x_coordinates[k - 1], l] for l in v]
 
     return residue_plotting_coordinates
 
@@ -263,16 +263,20 @@ def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_col
     for col_id, coords in residue_plotting_coordinates.items():
         residue_names = [r for r in residue_names_to_plot if r[1][0] == chain_column_id_mapping[col_id]]
         residue_names = sorted(residue_names, key=lambda x: int(x[1][3:]))
-        x = coords[0]
+        # x = coords[0]
         if annotate_list:
-            for y, name, annotation in zip(coords[1], residue_names, annotate_list):
+            for coord, name, annotation in zip(coords, residue_names, annotate_list):
+                x = coord[0]
+                y = coord[1]
                 if name[0] in residue_selection:
                     highlight = True
                 draw_residue(ctx, x, y, name[1], annotation, highlight)
                 residue_coordinates[name[0]] = [x, y]
                 highlight = False
         else:
-            for y, name in zip(coords[1], residue_names):
+            for coord, name in zip(coords, residue_names):
+                x = coord[0]
+                y = coord[1]
                 draw_residue(ctx, x, y, name[1])
                 residue_coordinates[name[0]] = [x, y]
 
