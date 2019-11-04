@@ -303,12 +303,21 @@ def main(args):
                                                        'considered (default 0.5 kcal/mol).', default=0.5)
     parser.add_argument('-c', '--compare_file', help='only display interactions that differ from those in this file')
     parser.add_argument('-a', '--annotate', help='annotate residues with energy values')
+    parser.add_argument('-m', '--highlight_residue', help='highlight interactions of this residue')
 
     args = parser.parse_args()
 
     args.compare_thresh = float(args.compare_thresh)
 
     control_file_data_frame, n_chains, residues_control_file = read_control_file(args.control)
+
+    # check if residue to highlight is present in control file
+    if args.highlight_residue:
+        residue_to_highlight = control_file_data_frame[control_file_data_frame.Legend.str.contains(
+            args.highlight_residue)]
+    else:
+        residue_to_highlight = False
+
 
     decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp, args.compare_file)
 
