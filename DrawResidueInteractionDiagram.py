@@ -267,6 +267,8 @@ def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbon
         # continue if the flipped residue identifiers are in the ugly list
         if res2 + ' ' + res1 in painted:
             continue
+        if '-' in res2 or '-' in res1:
+            continue
         painted.append(r1)
 
         coord1 = residue_coordinates[res1]
