@@ -107,6 +107,18 @@ def get_residue_interaction_tuples(decomp_table_data_frame):
     return temp
 
 
+def get_highlight_residues(residue_interaction_tuples, residue_to_highlight):
+    residue_selection = []
+    for k in residue_interaction_tuples.keys():
+        res1 = k[0:7].strip()
+        res2 = k[7:].strip()
+
+        if residue_to_highlight.iloc[0].Id in [res1, res2]:
+            residue_selection.append(res1)
+            residue_selection.append(res2)
+
+    return list(set(residue_selection))
+
 def read_hbonds_file(file_name, threshold):
     data_frame = pd.read_csv(file_name, names=['res1', 'res2', 'n_frames'])
     data_frame = data_frame[data_frame.n_frames > threshold]
@@ -245,7 +257,7 @@ def draw_residue(ctx, x, y, text, annotation=False, highlight=False):
         ctx.set_font_size(FONT_SIZE)
 
 def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx,
-                  annotate_list=False, residues_to_highlight=False):
+                  annotate_list=[], residue_selection=[]):
     residue_coordinates = {}
     highlight = False
     for col_id, coords in residue_plotting_coordinates.items():
@@ -254,7 +266,7 @@ def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_col
         x = coords[0]
         if annotate_list:
             for y, name, annotation in zip(coords[1], residue_names, annotate_list):
-                if name[0] in residues_to_highlight:
+                if name[0] in residue_selection:
                     highlight = True
                 draw_residue(ctx, x, y, name[1], annotation, highlight)
                 residue_coordinates[name[0]] = [x, y]
@@ -280,9 +292,6 @@ def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbon
         res1 = r1[0:7].strip()
         res2 = r1[7:].strip()
 
-        if residue_to_highlight.iloc[0].Id in [res1, res2]:
-            residues_to_highlight.append(res1)
-            residues_to_highlight.append(res2)
         # continue if the flipped residue identifiers are in the ugly list
         if res2 + ' ' + res1 in painted:
             continue
@@ -307,8 +316,6 @@ def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbon
         ctx.set_line_width(abs(energy))
         ctx.line_to(coord2[0], coord2[1])
         ctx.stroke()
-
-    return list(set(residues_to_highlight))
 
 
 def main(args):
@@ -392,6 +399,13 @@ def main(args):
     ctx = cairo.Context(surface)
     ctx.set_font_size(FONT_SIZE)
 
+    residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
+
+    if residue_to_highlight is not None:
+        residue_selection = get_highlight_residues(residue_interaction_tuples, residue_to_highlight)
+    else:
+        residue_selection = False
+
     selected_rows, residue_names_to_plot = generate_residue_names_to_plot(control_file_data_frame,
                                                                           residues_decomp_table)
 
@@ -401,13 +415,10 @@ def main(args):
     chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Col').to_dict()[
         'Chain']
 
-    residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
-
     residue_coordinates = plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
                                         ctx)
 
-    residues_to_highlight = plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame,
-                                              residue_to_highlight)
+    plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame)
 
     # replotting residues so that they overlay the interaction lines
     if args.annotate:
@@ -416,7 +427,7 @@ def main(args):
         gains_losses = False
 
     plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
-                  ctx, gains_losses, residues_to_highlight)
+                  ctx, gains_losses, residue_selection)
 
 
 if __name__ == '__main__':
