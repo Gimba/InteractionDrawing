@@ -30,7 +30,7 @@ WIDTH, HEIGHT = 1500, 3000
 
 RES_RADIUS = 60
 COL_SPACING = 400
-RES_Y_SPACING = 80
+RES_Y_SPACING = 60
 MARGIN = 100
 FONT_SIZE = 24
 DASH_SIZE = 10
@@ -267,6 +267,7 @@ def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbon
         # continue if the flipped residue identifiers are in the ugly list
         if res2 + ' ' + res1 in painted:
             continue
+        # skip ions
         if '-' in res2 or '-' in res1:
             continue
         painted.append(r1)
