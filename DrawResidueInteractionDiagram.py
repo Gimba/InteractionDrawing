@@ -212,7 +212,7 @@ def change_residue_ids(control_file_data_frame, data_frame):
     return data_frame
 
 
-def draw_residue(ctx, x, y, text, annotation=False):
+def draw_residue(ctx, x, y, text, annotation=False, highlight=False):
     colour = generate_amino_acid_colour(text[2])
     ctx.set_source_rgb(colour[0], colour[1], colour[2])
     ctx.save()
@@ -227,6 +227,15 @@ def draw_residue(ctx, x, y, text, annotation=False):
     (x_bearing, y_bearing, width, height, x_advance, y_advance) = ctx.text_extents(text)
 
     ctx.move_to(x - (width + add_width) / 2, y + height / 2)
+
+    if highlight:
+        ctx.select_font_face("Arial",
+                             cairo.FontSlant.NORMAL,
+                             cairo.FontWeight.BOLD)
+    else:
+        ctx.select_font_face("Arial",
+                             cairo.FontSlant.NORMAL,
+                             cairo.FontWeight.NORMAL)
     ctx.show_text(text)
 
     if annotation:
@@ -236,16 +245,20 @@ def draw_residue(ctx, x, y, text, annotation=False):
         ctx.set_font_size(FONT_SIZE)
 
 def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx,
-                  annotate_list=False):
+                  annotate_list=False, residues_to_highlight=False):
     residue_coordinates = {}
+    highlight = False
     for col_id, coords in residue_plotting_coordinates.items():
         residue_names = [r for r in residue_names_to_plot if r[1][0] == chain_column_id_mapping[col_id]]
         residue_names = sorted(residue_names, key=lambda x: int(x[1][3:]))
         x = coords[0]
         if annotate_list:
             for y, name, annotation in zip(coords[1], residue_names, annotate_list):
-                draw_residue(ctx, x, y, name[1], annotation)
+                if name[0] in residues_to_highlight:
+                    highlight = True
+                draw_residue(ctx, x, y, name[1], annotation, highlight)
                 residue_coordinates[name[0]] = [x, y]
+                highlight = False
         else:
             for y, name in zip(coords[1], residue_names):
                 draw_residue(ctx, x, y, name[1])
@@ -388,7 +401,7 @@ def main(args):
 
     residues_to_highlight = plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame,
                                               residue_to_highlight)
-    print(residues_to_highlight)
+
     # replotting residues so that they overlay the interaction lines
     if args.annotate:
         gains_losses = list(decomp_table_data_frame.agg(lambda x: x.sum()))
@@ -396,7 +409,7 @@ def main(args):
         gains_losses = False
 
     plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
-                  ctx, gains_losses)
+                  ctx, gains_losses, residues_to_highlight)
 
 
 if __name__ == '__main__':
