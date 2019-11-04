@@ -325,6 +325,8 @@ def main(args):
     parser.add_argument('-c', '--compare_file', help='only display interactions that differ from those in this file')
     parser.add_argument('-a', '--annotate', help='annotate residues with energy values')
     parser.add_argument('-m', '--highlight_residue', help='highlight interactions of this residue')
+    parser.add_argument('-e', action="store_true",
+                        help='specify that only contacts to the highlighted residue should be plotted')
 
     args = parser.parse_args()
 
@@ -338,6 +340,11 @@ def main(args):
             args.highlight_residue)]
     else:
         residue_to_highlight = False
+
+    if not residue_to_highlight.iloc[0].Id and args.e:
+        print('Plot contacts to highlight residue exclusively selected but residue not specified. Please specify '
+              'residue using -m. Exiting')
+        exit()
 
 
     decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp, args.compare_file)
@@ -394,10 +401,10 @@ def main(args):
     chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Col').to_dict()[
         'Chain']
 
+    residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
+
     residue_coordinates = plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
                                         ctx)
-
-    residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
     residues_to_highlight = plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame,
                                               residue_to_highlight)
