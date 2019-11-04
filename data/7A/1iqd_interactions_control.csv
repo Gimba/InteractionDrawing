@@ -85,6 +85,7 @@ Col,Id,Legend,Chain,Fill
 1,VAL 241,86,A,Hydro
 1,VAL 352,197,A,Hydro
 1,VAL 361,206,A,Hydro
+2,CYX   1,2174,C,Hydro
 2,ALA  28,2201,C,Hydro
 2,ALA  35,2208,C,Hydro
 2,ALA  45,2218,C,Hydro
@@ -207,6 +208,8 @@ Col,Id,Legend,Chain,Fill
 2,VAL 120,2293,C,Hydro
 2,VAL 121,2294,C,Hydro
 2,VAL 141,2314,C,Hydro
+2,ILE 144,2317,C,Hydro
+2,ALA 145,2318,C,Hydro
 3,ALA 376,9,B,Hydro
 3,ALA 383,16,B,Hydro
 3,ALA 407,40,B,Hydro
@@ -309,3 +312,7 @@ Col,Id,Legend,Chain,Fill
 3,VAL 435,68,B,Hydro
 3,VAL 460,90,B,Hydro
 3,VAL 465,95,B,Hydro
+3,PHE 471,101,B,Hydro
+3,ASP 472,102,B,Hydro
+3,ALA 470,100,B,Hydro
+3,ILE 473,103,B,Hydro
