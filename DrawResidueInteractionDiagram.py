@@ -76,7 +76,7 @@ def read_control_file(file_name):
     return data_frame, n_chains, residues_control_file
 
 
-def read_decomp_table_file(file_name, cmpr, residue_to_highlight, exclusive=""):
+def read_decomp_table_file(file_name, cmpr, residue_to_highlight=[], exclusive=""):
     data_frame = pd.read_csv(file_name, index_col=0)
 
     # remove rows not containing any energy values
@@ -91,9 +91,8 @@ def read_decomp_table_file(file_name, cmpr, residue_to_highlight, exclusive=""):
         # therefore it get transformed into a dataframe object again
         data_frame = data_frame.to_frame()
         data_frame = data_frame.drop(data_frame[data_frame[residue_to_highlight] == 0].index)
-    residues_decomp_table = data_frame.index
 
-    return data_frame, residues_decomp_table
+    return data_frame
 
 
 def get_residue_interaction_tuples(decomp_table_data_frame):
@@ -127,6 +126,7 @@ def get_highlight_residues(residue_interaction_tuples, residue_to_highlight):
 
     return list(set(residue_selection))
 
+
 def read_hbonds_file(file_name, threshold):
     data_frame = pd.read_csv(file_name, names=['res1', 'res2', 'n_frames'])
     data_frame = data_frame[data_frame.n_frames > threshold]
@@ -145,6 +145,28 @@ def check_residue_naming(control_file_residues, decomp_table_residues):
         print('Control file contains all elements of decomp table.')
     else:
         print('Missing residues in control file {}'.format(decomp_residues_set - control_residues_set))
+
+
+def check_compare_file(compare_file_data_frame, decomp_table_data_frame):
+    # check if index of compare file data frame contains a mutation of a residue on base of the residue
+    # numbering, this code is to only replace mutated residues (does not really work properly so far,
+    # since the assumption here is that both indices are in the same order and have the same length)
+    if not compare_file_data_frame.index.equals(decomp_table_data_frame.index):
+        cmp_index = list(compare_file_data_frame.index)
+        decomp_index = list(decomp_table_data_frame.index)
+
+        # check if residue ids differ
+        for k, [cmp_id, decomp_id] in enumerate(zip(cmp_index, decomp_index)):
+            if cmp_id != decomp_id:
+                print('Differing amino acid code for residue', cmp_id.split()[1], ':', cmp_id.split()[0],
+                      '(comp file)', decomp_id.split()[0], '(decomp) --> will plot', decomp_id.split()[0])
+                cmp_index[k] = decomp_id
+
+        # replace index and column headers
+        compare_file_data_frame.index = cmp_index
+        compare_file_data_frame.columns = cmp_index
+
+    return compare_file_data_frame
 
 
 def generate_residue_names_to_plot(control_file_data_frame, residues_decomp_table):
@@ -194,7 +216,7 @@ def generate_intra_column_y_coordinates(residues_in_each_chain):
     return col_y_coordinates
 
 
-def generate_residue_plotting_coordinates(n_chains, selected_rows, exclusive=False):
+def generate_residue_plotting_coordinates(n_chains, selected_rows, exclusive=[]):
     # calculate where the columns should be placed
     columns_x_coordinates = generate_column_x_coordinates(n_chains)
 
@@ -204,16 +226,19 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows, exclusive=Fal
 
     residue_plotting_coordinates = {}
     if exclusive:
-        circle_coords = generate_coordinate_circle(WIDTH / 2, 300, selected_rows.shape[0])
+        circle_coords = generate_coordinate_circle(WIDTH / 2, 400, selected_rows.shape[0] + n_chains)
         counter = 0
         for k, v in residues_in_each_column.items():
             residue_plotting_coordinates[k] = circle_coords[counter:v + counter]
-            counter += v
+
+            # introduces gap when a new chain get plotted
+            counter += v + 1
+        # plot selected residue in the middle
+        residue_plotting_coordinates[exclusive[0]][exclusive[1] - 1] = [WIDTH / 2, WIDTH / 2]
 
     else:
         for k, v in intra_column_y_coordinates.items():
             residue_plotting_coordinates[k] = [[columns_x_coordinates[k - 1], l] for l in v]
-
 
     return residue_plotting_coordinates
 
@@ -277,6 +302,7 @@ def draw_residue(ctx, x, y, text, annotation=False, highlight=False):
         ctx.set_font_size(FONT_SIZE * 0.75)
         ctx.show_text('{0:+.2f}'.format(annotation))
         ctx.set_font_size(FONT_SIZE)
+
 
 def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx,
                   annotate_list=[], residue_selection=[]):
@@ -379,29 +405,16 @@ def main(args):
               'residue using -m. Exiting')
         exit()
 
-    decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp, args.compare_file,
-                                                                            residue_to_highlight.iloc[0].Id, args.e)
+    if residue_to_highlight:
+        decomp_table_data_frame = read_decomp_table_file(args.decomp, args.compare_file,
+                                                         residue_to_highlight.iloc[0].Id, args.e)
+    else:
+        decomp_table_data_frame = read_decomp_table_file(args.decomp, args.compare_file)
 
     if args.compare_file:
-        compare_file_data_frame, residues_compare_file = read_decomp_table_file(args.compare_file, args.compare_file)
+        compare_file_data_frame = read_decomp_table_file(args.compare_file, args.compare_file)
 
-        # check if index of compare file data frame contains a mutation of a residue on base of the residue
-        # numbering, this code is to only replace mutated residues (does not really work properly so far,
-        # since the assumption here is that both indices are in the same order and have the same length)
-        if not compare_file_data_frame.index.equals(decomp_table_data_frame.index):
-            cmp_index = list(compare_file_data_frame)
-            decomp_index = list(decomp_table_data_frame.index)
-
-            # check if residue ids differ
-            for k, [cmp_id, decomp_id] in enumerate(zip(cmp_index, decomp_index)):
-                if cmp_id != decomp_id:
-                    print('Differing amino acid code for residue', cmp_id.split()[1], ':', cmp_id.split()[0],
-                          '(comp file)', decomp_id.split()[0], '(decomp) --> will plot', decomp_id.split()[0])
-                    cmp_index[k] = decomp_id
-
-            # replace index and column headers
-            compare_file_data_frame.index = cmp_index
-            compare_file_data_frame.columns = cmp_index
+        check_compare_file(compare_file_data_frame, decomp_table_data_frame)
 
         # substracting data frames (with fill_value=0 'nan's get set to zero for substraction)
         decomp_table_data_frame = decomp_table_data_frame.subtract(compare_file_data_frame, fill_value=0)
@@ -413,8 +426,10 @@ def main(args):
         decomp_table_data_frame.dropna(axis=0, how='all', inplace=True)
         decomp_table_data_frame.dropna(axis=1, how='all', inplace=True)
 
-        # redefine residues to plot
-        residues_decomp_table = decomp_table_data_frame.index
+    # redefine residues to plot
+    residues_decomp_table = list(decomp_table_data_frame.index)
+    residues_decomp_table.extend(list(decomp_table_data_frame.columns.values))
+    residues_decomp_table = list(set(residues_decomp_table))
 
     check_residue_naming(residues_control_file, residues_decomp_table)
 
@@ -427,6 +442,13 @@ def main(args):
 
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
+    # get residues from residue_interaction_tuples
+    interacting_residues = [res[:8].strip() for res in residue_interaction_tuples.keys()]
+    interacting_residues += [res[8:].strip() for res in residue_interaction_tuples.keys()]
+
+    # sort out residues that do not have interactions after applying the threshold
+    residues_decomp_table = [res for res in list(residues_decomp_table) if res in interacting_residues]
+
     if residue_to_highlight is not None:
         residue_selection = get_highlight_residues(residue_interaction_tuples, residue_to_highlight)
     else:
@@ -435,8 +457,18 @@ def main(args):
     selected_rows, residue_names_to_plot = generate_residue_names_to_plot(control_file_data_frame,
                                                                           residues_decomp_table)
 
-    # calculate where the residues should be plotted for every column
-    residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows, args.e)
+    # get the index of the selected residue to set its coordinate to the middle
+    if args.e:
+        res_ids_temp = [res_id[0] for res_id in residue_names_to_plot if res_id[1][0] == residue_to_highlight.iloc[
+            0].Chain]
+        pos_res_to_highlight = [residue_to_highlight.iloc[
+                                    0].Col, res_ids_temp.index(residue_to_highlight.iloc[0].Id)]
+
+        # calculate where the residues should be plotted for every column
+        residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows,
+                                                                             pos_res_to_highlight)
+    else:
+        residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows)
 
     chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Col').to_dict()[
         'Chain']
