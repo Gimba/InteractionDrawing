@@ -203,8 +203,17 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows, exclusive=Fal
     intra_column_y_coordinates = generate_intra_column_y_coordinates(residues_in_each_column)
 
     residue_plotting_coordinates = {}
-    for k, v in intra_column_y_coordinates.items():
-        residue_plotting_coordinates[k] = [[columns_x_coordinates[k - 1], l] for l in v]
+    if exclusive:
+        circle_coords = generate_coordinate_circle(WIDTH / 2, 300, selected_rows.shape[0])
+        counter = 0
+        for k, v in residues_in_each_column.items():
+            residue_plotting_coordinates[k] = circle_coords[counter:v + counter]
+            counter += v
+
+    else:
+        for k, v in intra_column_y_coordinates.items():
+            residue_plotting_coordinates[k] = [[columns_x_coordinates[k - 1], l] for l in v]
+
 
     return residue_plotting_coordinates
 
