@@ -76,13 +76,21 @@ def read_control_file(file_name):
     return data_frame, n_chains, residues_control_file
 
 
-def read_decomp_table_file(file_name, cmpr):
+def read_decomp_table_file(file_name, cmpr, exclusive=""):
     data_frame = pd.read_csv(file_name, index_col=0)
 
     # remove rows not containing any energy values
     if not cmpr:
         data_frame.dropna(axis=0, how='all', inplace=True)
         data_frame.dropna(axis=1, how='all', inplace=True)
+
+    # only keep column that contains selected residue
+    if exclusive:
+        data_frame = data_frame.loc[:, 'TYR  22']
+        # since only one column is selected data_frame will be of type Series. This causes problems later and
+        # therefore it get transformed into a dataframe object again
+        data_frame = data_frame.to_frame()
+        data_frame = data_frame.drop(data_frame[data_frame['TYR  22'] == 0].index)
     residues_decomp_table = data_frame.index
 
     return data_frame, residues_decomp_table
@@ -357,8 +365,7 @@ def main(args):
               'residue using -m. Exiting')
         exit()
 
-
-    decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp, args.compare_file)
+    decomp_table_data_frame, residues_decomp_table = read_decomp_table_file(args.decomp, args.compare_file, args.e)
 
     if args.compare_file:
         compare_file_data_frame, residues_compare_file = read_decomp_table_file(args.compare_file, args.compare_file)
@@ -368,7 +375,7 @@ def main(args):
         # since the assumption here is that both indices are in the same order and have the same length)
         if not compare_file_data_frame.index.equals(decomp_table_data_frame.index):
             cmp_index = list(compare_file_data_frame)
-            decomp_index = list(decomp_table_data_frame)
+            decomp_index = list(decomp_table_data_frame.index)
 
             # check if residue ids differ
             for k, [cmp_id, decomp_id] in enumerate(zip(cmp_index, decomp_index)):
@@ -414,7 +421,7 @@ def main(args):
                                                                           residues_decomp_table)
 
     # calculate where the residues should be plotted for every column
-    residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows)
+    residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows, args.e)
 
     chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Col').to_dict()[
         'Chain']
@@ -431,7 +438,7 @@ def main(args):
         gains_losses = False
 
     plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
-                  ctx, gains_losses, residue_selection)
+                  ctx, gains_losses)
 
 
 if __name__ == '__main__':
