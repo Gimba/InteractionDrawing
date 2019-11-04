@@ -164,6 +164,11 @@ def generate_column_x_coordinates(n_chains):
     return columns_x_coordinates
 
 
+def generate_coordinate_circle(middle, r, n=100):
+    return [(math.cos(2 * math.pi / n * (x + middle)) * r, math.sin(2 * math.pi / n * (x + middle)) * r) for x in
+            range(0, n + 1)]
+
+
 def generate_coordinate_spread(middle, n, spacing):
     coordinate_offsets = []
     if n % 2 == 1:
