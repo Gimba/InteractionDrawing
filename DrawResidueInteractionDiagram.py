@@ -76,21 +76,21 @@ def read_control_file(file_name):
     return data_frame, n_chains, residues_control_file
 
 
-def read_decomp_table_file(file_name, cmpr, residue_to_highlight=[], exclusive=""):
+def read_decomp_table_file(file_name):
     data_frame = pd.read_csv(file_name, index_col=0)
 
-    # remove rows not containing any energy values
-    if not cmpr:
-        data_frame.dropna(axis=0, how='all', inplace=True)
-        data_frame.dropna(axis=1, how='all', inplace=True)
+    # remove rows and columns only containing na
+    data_frame.dropna(axis=0, how='all', inplace=True)
+    data_frame.dropna(axis=1, how='all', inplace=True)
 
-    # only keep column that contains selected residue
-    if exclusive:
-        data_frame = data_frame.loc[:, residue_to_highlight]
-        # since only one column is selected data_frame will be of type Series. This causes problems later and
-        # therefore it get transformed into a dataframe object again
-        data_frame = data_frame.to_frame()
-        data_frame = data_frame.drop(data_frame[data_frame[residue_to_highlight] == 0].index)
+    #
+    # # only keep column that contains selected residue
+    # if exclusive:
+    #     data_frame = data_frame.loc[:, residue_to_highlight]
+    #     # since only one column is selected data_frame will be of type Series. This causes problems later and
+    #     # therefore it get transformed into a dataframe object again
+    #     data_frame = data_frame.to_frame()
+    #     data_frame = data_frame.drop(data_frame[data_frame[residue_to_highlight] == 0].index)
 
     return data_frame
 
@@ -112,6 +112,16 @@ def get_residue_interaction_tuples(decomp_table_data_frame):
             temp[k0 + " " + k1] = v1
 
     return temp
+
+
+def get_residue_contacts(data_frame, residue_to_highlight, threshold=0):
+    res_id = list(residue_to_highlight.Id)[0]
+    res_column = data_frame[res_id]
+
+    res_column = res_column[abs(res_column) != 0]
+    res_column = res_column[abs(res_column) >= threshold]
+
+    return list(res_column.index)
 
 
 def get_highlight_residues(residue_interaction_tuples, residue_to_highlight):
@@ -405,16 +415,15 @@ def main(args):
               'residue using -m. Exiting')
         exit()
 
-    if residue_to_highlight:
-        decomp_table_data_frame = read_decomp_table_file(args.decomp, args.compare_file,
-                                                         residue_to_highlight.iloc[0].Id, args.e)
-    else:
-        decomp_table_data_frame = read_decomp_table_file(args.decomp, args.compare_file)
+    decomp_table_data_frame = read_decomp_table_file(args.decomp)
 
     if args.compare_file:
-        compare_file_data_frame = read_decomp_table_file(args.compare_file, args.compare_file)
+        compare_file_data_frame = read_decomp_table_file(args.compare_file)
 
         check_compare_file(compare_file_data_frame, decomp_table_data_frame)
+
+        if residue_to_highlight is not None:
+            residues_to_highlight = get_residue_contacts(compare_file_data_frame, residue_to_highlight)
 
         # substracting data frames (with fill_value=0 'nan's get set to zero for substraction)
         decomp_table_data_frame = decomp_table_data_frame.subtract(compare_file_data_frame, fill_value=0)
@@ -425,6 +434,10 @@ def main(args):
         # remove colmuns and rows only containing nan
         decomp_table_data_frame.dropna(axis=0, how='all', inplace=True)
         decomp_table_data_frame.dropna(axis=1, how='all', inplace=True)
+
+    residues_to_highlight = []
+    if residue_to_highlight is not None:
+        residues_to_highlight = get_residue_contacts(decomp_table_data_frame, residue_to_highlight)
 
     # redefine residues to plot
     residues_decomp_table = list(decomp_table_data_frame.index)
