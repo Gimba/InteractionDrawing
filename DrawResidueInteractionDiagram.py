@@ -465,11 +465,6 @@ def main(args):
     # get energy values that determine line thickness and what residues to connect
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
-    if residue_to_highlight is not None:
-        residue_selection = get_highlight_residues(residue_interaction_tuples, residue_to_highlight)
-    else:
-        residue_selection = False
-
     selected_rows, residue_names_to_plot = generate_residue_names_to_plot(control_file_data_frame,
                                                                           residues_decomp_table)
 
