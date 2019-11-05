@@ -434,7 +434,7 @@ def main(args):
         decomp_table_data_frame.dropna(axis=1, how='all', inplace=True)
 
     residues_to_highlight = []
-    if residue_to_highlight is not None:
+    if residue_to_highlight is not False:
         residues_to_highlight = get_residue_contacts(decomp_table_data_frame, residue_to_highlight)
 
     # if the selected residue should be plotted exclusively we remove everything from the frame except for the column
@@ -464,13 +464,6 @@ def main(args):
 
     # get energy values that determine line thickness and what residues to connect
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
-
-    # get residues from residue_interaction_tuples
-    interacting_residues = [res[:8].strip() for res in residue_interaction_tuples.keys()]
-    interacting_residues += [res[8:].strip() for res in residue_interaction_tuples.keys()]
-
-    # sort out residues that do not have interactions after applying the threshold
-    residues_decomp_table = [res for res in list(residues_decomp_table) if res in interacting_residues]
 
     if residue_to_highlight is not None:
         residue_selection = get_highlight_residues(residue_interaction_tuples, residue_to_highlight)
