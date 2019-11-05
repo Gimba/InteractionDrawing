@@ -157,7 +157,7 @@ def check_residue_naming(control_file_residues, decomp_table_residues):
         print('Missing residues in control file {}'.format(decomp_residues_set - control_residues_set))
 
 
-def check_compare_file(compare_file_data_frame, decomp_table_data_frame):
+def harmonize_residue_ids(compare_file_data_frame, decomp_table_data_frame):
     # check if index of compare file data frame contains a mutation of a residue on base of the residue
     # numbering, this code is to only replace mutated residues (does not really work properly so far,
     # since the assumption here is that both indices are in the same order and have the same length)
@@ -420,15 +420,13 @@ def main(args):
     if args.compare_file:
         compare_file_data_frame = read_decomp_table_file(args.compare_file)
 
-        check_compare_file(compare_file_data_frame, decomp_table_data_frame)
-
-        if residue_to_highlight is not None:
-            residues_to_highlight = get_residue_contacts(compare_file_data_frame, residue_to_highlight)
+        harmonize_residue_ids(compare_file_data_frame, decomp_table_data_frame)
 
         # substracting data frames (with fill_value=0 'nan's get set to zero for substraction)
         decomp_table_data_frame = decomp_table_data_frame.subtract(compare_file_data_frame, fill_value=0)
 
-        # apply threshold
+        # apply threshold (this should be done with caution, a lot of interaction energies have low energy but add up
+        # to significant amounts)
         decomp_table_data_frame = decomp_table_data_frame.mask(abs(decomp_table_data_frame) <= args.compare_thresh)
 
         # remove colmuns and rows only containing nan
