@@ -484,6 +484,8 @@ def main(args):
     chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Col').to_dict()[
         'Chain']
 
+    # here I use the plot_residue function to generate a dictionnary with coordinates of every residue that gets
+    # plotted which is then use in plot_interactions to draw the lines between residues
     residue_coordinates = plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
                                         ctx)
 
