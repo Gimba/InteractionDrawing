@@ -437,7 +437,18 @@ def main(args):
     if residue_to_highlight is not None:
         residues_to_highlight = get_residue_contacts(decomp_table_data_frame, residue_to_highlight)
 
-    # redefine residues to plot
+    # if the selected residue should be plotted exclusively we remove everything from the frame except for the column
+    # of that residue
+    if args.e:
+        decomp_table_data_frame = decomp_table_data_frame[list(residue_to_highlight.Id)[0]]
+        # since only one column is selected data_frame will be of type Series. This causes problems later and
+        # therefore it get transformed into a dataframe object again
+        decomp_table_data_frame = decomp_table_data_frame.to_frame()
+        decomp_table_data_frame.dropna(axis=0, how='all', inplace=True)
+
+    # redefine residues to plot (this is little bit more complicated than it should be since the data frame is
+    # sometimes not symmetric which is why some indexes or columns could be lost due to filtering out rows and
+    # columns below a threshold and only containing nan values
     residues_decomp_table = list(decomp_table_data_frame.index)
     residues_decomp_table.extend(list(decomp_table_data_frame.columns.values))
     residues_decomp_table = list(set(residues_decomp_table))
@@ -451,6 +462,7 @@ def main(args):
     ctx = cairo.Context(surface)
     ctx.set_font_size(FONT_SIZE)
 
+    # get energy values that determine line thickness and what residues to connect
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
 
     # get residues from residue_interaction_tuples
