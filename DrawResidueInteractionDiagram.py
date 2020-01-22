@@ -234,25 +234,58 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows, exclusive=[])
 
     intra_column_y_coordinates = generate_intra_column_y_coordinates(residues_in_each_column)
 
-    residue_plotting_coordinates = {}
-    if exclusive:
-        circle_coords = generate_coordinate_circle(WIDTH / 2, 400, selected_rows.shape[0] + n_chains - 1)
-        counter = 0
-        for k, v in residues_in_each_column.items():
-            if k == 2:
-                v -= 1
-            residue_plotting_coordinates[k] = circle_coords[counter:v + counter]
+    selected_rows = selected_rows.set_index('Id')
+    idx = sorted(selected_rows.index, key=lambda x: int(x[3:]))
+    selected_rows.reindex(idx)
+    selected_rows['X_Coord'] = ""
+    selected_rows['Y_Coord'] = ""
+    x_row = list(selected_rows.columns).index('X_Coord')
+    y_row = list(selected_rows.columns).index('Y_Coord')
 
-            # introduces gap when a new chain get plotted
-            counter += v + 1
-        # plot selected residue in the middle
-        residue_plotting_coordinates[exclusive[0]].insert(exclusive[1] - 1, ([WIDTH / 2, WIDTH / 2]))
+    circle_coords = generate_coordinate_circle(WIDTH / 2, 400, selected_rows.shape[0] + n_chains - 1)
 
-    else:
-        for k, v in intra_column_y_coordinates.items():
-            residue_plotting_coordinates[k] = [[columns_x_coordinates[k - 1], l] for l in v]
+    # add a coordinate to each line in selected rows
+    counter = 0
+    old_chain = selected_rows.iloc[counter]['Chain']
+    for index, row in selected_rows.iterrows():
+        chain = row['Chain']
+        # do not jump to the next circle coordinate for the residue in the middle
+        if index == exclusive:
+            selected_rows.loc[index, 'X_Coord'] = WIDTH / 2
+            selected_rows.loc[index, 'Y_Coord'] = WIDTH / 2
+        else:
+            # leave out a space/use next coordinate if a new chain starts
+            if old_chain != chain:
+                print(old_chain, chain)
+                old_chain = chain
+                counter += 1
+            selected_rows.loc[index, 'X_Coord'] = circle_coords[counter][0]
+            selected_rows.loc[index, 'Y_Coord'] = circle_coords[counter][1]
+            counter += 1
 
-    return residue_plotting_coordinates
+    # residue_plotting_coordinates = {}
+    # if exclusive:
+    #     # generate coordinates on a circle, minus 1 because we put the selected residue in the middle
+    #     circle_coords = generate_coordinate_circle(WIDTH / 2, 400, selected_rows.shape[0] + n_chains - 1)
+    #
+    #     for c in circle_coords:
+    #         pass
+    #     counter = 0
+    #     for k, v in residues_in_each_column.items():
+    #         if k == 2:
+    #             v -= 1
+    #         residue_plotting_coordinates[k] = circle_coords[counter:v + counter]
+    #
+    #         # introduces gap when a new chain get plotted
+    #         counter += v + 1
+    #     # plot selected residue in the middle
+    #     residue_plotting_coordinates[exclusive[0]].insert(exclusive[1] - 1, ([WIDTH / 2, WIDTH / 2]))
+    #
+    # else:
+    #     for k, v in intra_column_y_coordinates.items():
+    #         residue_plotting_coordinates[k] = [[columns_x_coordinates[k - 1], l] for l in v]
+
+    return selected_rows
 
 
 def generate_amino_acid_colour(amino_acid_code):
@@ -478,8 +511,8 @@ def main(args):
                                     0].Col, res_ids_temp.index(residue_to_highlight.iloc[0].Id)]
 
         # calculate where the residues should be plotted for every column
-        residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows,
-                                                                             pos_res_to_highlight)
+        selected_rows = generate_residue_plotting_coordinates(n_chains, selected_rows,
+                                                              'ILE 26')
     else:
         residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows)
 
