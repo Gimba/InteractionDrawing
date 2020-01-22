@@ -375,7 +375,7 @@ def main(args):
 
     # calculate where the residues should be plotted for every column
     selected_rows = generate_residue_plotting_coordinates(n_chains, selected_rows,
-                                                              'ILE  26')
+                                                              list(residue_to_highlight['Id'])[0])
     chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Col').to_dict()[
         'Chain']
 
