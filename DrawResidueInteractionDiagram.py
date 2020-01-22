@@ -23,7 +23,6 @@ import math
 import sys
 
 import cairo
-import numpy as np
 import pandas as pd
 
 WIDTH, HEIGHT = 1500, 3000
@@ -124,19 +123,6 @@ def get_residue_contacts(data_frame, residue_to_highlight, threshold=0):
     return list(res_column.index)
 
 
-def get_highlight_residues(residue_interaction_tuples, residue_to_highlight):
-    residue_selection = []
-    for k in residue_interaction_tuples.keys():
-        res1 = k[0:7].strip()
-        res2 = k[7:].strip()
-
-        if residue_to_highlight is None in [res1, res2]:
-            residue_selection.append(res1)
-            residue_selection.append(res2)
-
-    return list(set(residue_selection))
-
-
 def read_hbonds_file(file_name, threshold):
     data_frame = pd.read_csv(file_name, names=['res1', 'res2', 'n_frames'])
     data_frame = data_frame[data_frame.n_frames > threshold]
@@ -189,58 +175,19 @@ def generate_residue_names_to_plot(control_file_data_frame, residues_decomp_tabl
     return selected_rows, residue_names
 
 
-def generate_column_x_coordinates(n_chains):
-    x_middle = WIDTH / 2
-    columns_x_coordinates = generate_coordinate_spread(x_middle, n_chains, COL_SPACING)
-
-    return columns_x_coordinates
-
-
 def generate_coordinate_circle(middle, r, n=100):
     return [[(math.cos(2 * math.pi / n * (x)) * r) + middle, (math.sin(2 * math.pi / n * x) * r) + middle] for x in
             range(0, n + 1)]
 
 
-def generate_coordinate_spread(middle, n, spacing):
-    coordinate_offsets = []
-    if n % 2 == 1:
-        left_most_column_x = middle - ((n // 2) * spacing)
-
-        for c in range(n):
-            coordinate_offsets.append(left_most_column_x + (c * spacing))
-    else:
-        left_most_column_x = middle - (spacing / 2) - (((n / 2) - 1) * spacing)
-        for c in range(n):
-            coordinate_offsets.append(left_most_column_x + (c * spacing))
-    return coordinate_offsets
-
-
-def generate_intra_column_y_coordinates(residues_in_each_chain):
-    col_max = max(residues_in_each_chain.values())
-    y_middle = HEIGHT / 2
-    col_y_coordinates = {}
-
-    for k, v in residues_in_each_chain.items():
-        col_y_coordinates[k] = generate_coordinate_spread(y_middle, v, RES_Y_SPACING)
-
-    return col_y_coordinates
-
-
 def generate_residue_plotting_coordinates(n_chains, selected_rows, exclusive=[]):
     # calculate where the columns should be placed
-    columns_x_coordinates = generate_column_x_coordinates(n_chains)
-
-    residues_in_each_column = dict(selected_rows.Col.value_counts())
-
-    intra_column_y_coordinates = generate_intra_column_y_coordinates(residues_in_each_column)
 
     selected_rows = selected_rows.set_index('Id')
     idx = sorted(selected_rows.index, key=lambda x: int(x[3:]))
     selected_rows.reindex(idx)
     selected_rows['X_Coord'] = ""
     selected_rows['Y_Coord'] = ""
-    x_row = list(selected_rows.columns).index('X_Coord')
-    y_row = list(selected_rows.columns).index('Y_Coord')
 
     circle_coords = generate_coordinate_circle(WIDTH / 2, 400, selected_rows.shape[0] + n_chains - 1)
 
@@ -263,57 +210,12 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows, exclusive=[])
             selected_rows.loc[index, 'Y_Coord'] = circle_coords[counter][1]
             counter += 1
 
-    # residue_plotting_coordinates = {}
-    # if exclusive:
-    #     # generate coordinates on a circle, minus 1 because we put the selected residue in the middle
-    #     circle_coords = generate_coordinate_circle(WIDTH / 2, 400, selected_rows.shape[0] + n_chains - 1)
-    #
-    #     for c in circle_coords:
-    #         pass
-    #     counter = 0
-    #     for k, v in residues_in_each_column.items():
-    #         if k == 2:
-    #             v -= 1
-    #         residue_plotting_coordinates[k] = circle_coords[counter:v + counter]
-    #
-    #         # introduces gap when a new chain get plotted
-    #         counter += v + 1
-    #     # plot selected residue in the middle
-    #     residue_plotting_coordinates[exclusive[0]].insert(exclusive[1] - 1, ([WIDTH / 2, WIDTH / 2]))
-    #
-    # else:
-    #     for k, v in intra_column_y_coordinates.items():
-    #         residue_plotting_coordinates[k] = [[columns_x_coordinates[k - 1], l] for l in v]
-
     return selected_rows
 
 
 def generate_amino_acid_colour(amino_acid_code):
     colour = [v for k, v in res_colours.items() if amino_acid_code in k][0]
     return colour
-
-
-def change_residue_ids(control_file_data_frame, data_frame):
-    control_file_data_frame['residue_naming_new'] = control_file_data_frame.apply(lambda r: r.Chain + ':' + r.Legend,
-                                                                                  axis=1)
-    try:
-        df_index = np.asarray(data_frame.index)
-    except:
-        df_index = np.asarray([])
-    try:
-        df_columns = np.asarray(data_frame.columns)
-    except:
-        df_columns = np.asarray([])
-
-    for row in control_file_data_frame.iterrows():
-        if df_index.size > 0:
-            df_index[df_index == row[1].Id] = row[1].residue_naming_new
-        if df_columns.size > 0:
-            df_columns[df_columns == row[1].Id] = row[1].residue_naming_new
-        data_frame.replace(row[1].Id, row[1].residue_naming_new, inplace=True)
-    data_frame.set_index(df_index)
-    data_frame.columns = df_columns
-    return data_frame
 
 
 def draw_residue(ctx, x, y, text):
@@ -341,35 +243,13 @@ def plot_residues(selected_rows, ctx, energy_values={}):
         y = row['Y_Coord']
         name = row['Chain'] + ':' + res_codes[index[:3]] + row['Legend']
         draw_residue(ctx, x, y, name)
+
+        # plot energy values next to residues
         if energy_values:
             ctx.move_to(x + (RES_RADIUS * 0.35), y - (RES_RADIUS * 0.35))
             ctx.set_font_size(FONT_SIZE * 0.75)
             ctx.show_text('{0:+.2f}'.format(energy_values[index]))
             ctx.set_font_size(FONT_SIZE)
-        # exit()
-    # residue_coordinates = {}
-    # highlight = False
-    # for col_id, coords in residue_plotting_coordinates.items():
-    #     residue_names = [r for r in residue_names_to_plot if r[1][0] == chain_column_id_mapping[col_id]]
-    #     residue_names = sorted(residue_names, key=lambda x: int(x[1][3:]))
-    #     # x = coords[0]
-    #     if energy_values:
-    #         for coord, name, annotation in zip(coords, residue_names, annotate_list):
-    #             x = coord[0]
-    #             y = coord[1]
-    #             if name[0] in residue_selection:
-    #                 highlight = True
-    #             draw_residue(ctx, x, y, name[1], annotation, highlight)
-    #             residue_coordinates[name[0]] = [x, y]
-    #             highlight = False
-    #     else:
-    #         for coord, name in zip(coords, residue_names):
-    #             x = coord[0]
-    #             y = coord[1]
-    #             draw_residue(ctx, x, y, name[1])
-    #             residue_coordinates[name[0]] = [x, y]
-
-    # return residue_coordinates
 
 
 def plot_interactions(residue_interaction_tuples, selected_rows, ctx, hbonds):
@@ -425,8 +305,6 @@ def main(args):
     parser.add_argument('-c', '--compare_file', help='only display interactions that differ from those in this file')
     parser.add_argument('-a', '--annotate', help='annotate residues with energy values')
     parser.add_argument('-m', '--highlight_residue', help='highlight interactions of this residue')
-    parser.add_argument('-e', action="store_true",
-                        help='specify that only contacts to the highlighted residue should be plotted')
 
     args = parser.parse_args()
 
@@ -456,26 +334,21 @@ def main(args):
         # substracting data frames (with fill_value=0 'nan's get set to zero for substraction)
         decomp_table_data_frame = decomp_table_data_frame.subtract(compare_file_data_frame, fill_value=0)
 
-        # apply threshold (this should be done with caution, a lot of interaction energies have low energy but add up
-        # to significant amounts)
-        decomp_table_data_frame = decomp_table_data_frame.mask(abs(decomp_table_data_frame) <= args.compare_thresh)
+    # apply threshold (this should be done with caution, a lot of interaction energies have low energy but add up
+    # to significant amounts)
+    decomp_table_data_frame = decomp_table_data_frame.mask(abs(decomp_table_data_frame) <= args.compare_thresh)
 
-        # remove colmuns and rows only containing nan
-        decomp_table_data_frame.dropna(axis=0, how='all', inplace=True)
-        decomp_table_data_frame.dropna(axis=1, how='all', inplace=True)
-
-    residues_to_highlight = []
-    if residue_to_highlight is not False:
-        residues_to_highlight = get_residue_contacts(decomp_table_data_frame, residue_to_highlight)
+    # remove colmuns and rows only containing nan
+    decomp_table_data_frame.dropna(axis=0, how='all', inplace=True)
+    decomp_table_data_frame.dropna(axis=1, how='all', inplace=True)
 
     # if the selected residue should be plotted exclusively we remove everything from the frame except for the column
     # of that residue
-    if args.e:
-        decomp_table_data_frame = decomp_table_data_frame[list(residue_to_highlight.Id)[0]]
-        # since only one column is selected data_frame will be of type Series. This causes problems later and
-        # therefore it get transformed into a dataframe object again
-        decomp_table_data_frame = decomp_table_data_frame.to_frame()
-        decomp_table_data_frame.dropna(axis=0, how='all', inplace=True)
+    decomp_table_data_frame = decomp_table_data_frame[list(residue_to_highlight.Id)[0]]
+    # since only one column is selected data_frame will be of type Series. This causes problems later and
+    # therefore it get transformed into a dataframe object again
+    decomp_table_data_frame = decomp_table_data_frame.to_frame()
+    decomp_table_data_frame.dropna(axis=0, how='all', inplace=True)
 
     # redefine residues to plot (this is little bit more complicated than it should be since the data frame is
     # sometimes not symmetric which is why some indexes or columns could be lost due to filtering out rows and
@@ -500,18 +373,14 @@ def main(args):
                                                                           residues_decomp_table)
 
     # get the index of the selected residue to set its coordinate to the middle
-    if args.e:
-        res_ids_temp = [res_id[0] for res_id in residue_names_to_plot if res_id[1][0] == residue_to_highlight.iloc[
-            0].Chain]
-        pos_res_to_highlight = [residue_to_highlight.iloc[
-                                    0].Col, res_ids_temp.index(residue_to_highlight.iloc[0].Id)]
+    res_ids_temp = [res_id[0] for res_id in residue_names_to_plot if res_id[1][0] == residue_to_highlight.iloc[
+        0].Chain]
+    pos_res_to_highlight = [residue_to_highlight.iloc[
+                                0].Col, res_ids_temp.index(residue_to_highlight.iloc[0].Id)]
 
-        # calculate where the residues should be plotted for every column
-        selected_rows = generate_residue_plotting_coordinates(n_chains, selected_rows,
+    # calculate where the residues should be plotted for every column
+    selected_rows = generate_residue_plotting_coordinates(n_chains, selected_rows,
                                                               'ILE  26')
-    else:
-        residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows)
-
     chain_column_id_mapping = selected_rows.drop_duplicates('Chain')[['Chain', 'Col']].set_index('Col').to_dict()[
         'Chain']
 
@@ -531,8 +400,6 @@ def main(args):
 
     plot_residues(selected_rows, ctx, gains_losses)
     exit()
-
-
 
     plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
                   ctx, gains_losses)
