@@ -316,7 +316,7 @@ def change_residue_ids(control_file_data_frame, data_frame):
     return data_frame
 
 
-def draw_residue(ctx, x, y, text, annotation=False, highlight=False):
+def draw_residue(ctx, x, y, text):
     colour = generate_amino_acid_colour(text[2])
     ctx.set_source_rgb(colour[0], colour[1], colour[2])
     ctx.save()
@@ -332,29 +332,20 @@ def draw_residue(ctx, x, y, text, annotation=False, highlight=False):
 
     ctx.move_to(x - (width + add_width) / 2, y + height / 2)
 
-    if highlight:
-        ctx.select_font_face("Arial",
-                             cairo.FontSlant.NORMAL,
-                             cairo.FontWeight.BOLD)
-    else:
-        ctx.select_font_face("Arial",
-                             cairo.FontSlant.NORMAL,
-                             cairo.FontWeight.NORMAL)
     ctx.show_text(text)
 
-    if annotation:
-        ctx.move_to(x + (RES_RADIUS * 0.35), y - (RES_RADIUS * 0.35))
-        ctx.set_font_size(FONT_SIZE * 0.75)
-        ctx.show_text('{0:+.2f}'.format(annotation))
-        ctx.set_font_size(FONT_SIZE)
 
-
-def plot_residues(selected_rows, ctx, annotate_list=[], residue_selection=[]):
+def plot_residues(selected_rows, ctx, energy_values={}):
     for index, row in selected_rows.iterrows():
         x = row['X_Coord']
         y = row['Y_Coord']
         name = row['Chain'] + ':' + res_codes[index[:3]] + row['Legend']
         draw_residue(ctx, x, y, name)
+        if energy_values:
+            ctx.move_to(x + (RES_RADIUS * 0.35), y - (RES_RADIUS * 0.35))
+            ctx.set_font_size(FONT_SIZE * 0.75)
+            ctx.show_text('{0:+.2f}'.format(energy_values[index]))
+            ctx.set_font_size(FONT_SIZE)
         # exit()
     # residue_coordinates = {}
     # highlight = False
@@ -362,7 +353,7 @@ def plot_residues(selected_rows, ctx, annotate_list=[], residue_selection=[]):
     #     residue_names = [r for r in residue_names_to_plot if r[1][0] == chain_column_id_mapping[col_id]]
     #     residue_names = sorted(residue_names, key=lambda x: int(x[1][3:]))
     #     # x = coords[0]
-    #     if annotate_list:
+    #     if energy_values:
     #         for coord, name, annotation in zip(coords, residue_names, annotate_list):
     #             x = coord[0]
     #             y = coord[1]
@@ -381,7 +372,7 @@ def plot_residues(selected_rows, ctx, annotate_list=[], residue_selection=[]):
     # return residue_coordinates
 
 
-def plot_interactions(residue_interaction_tuples, selected_rows, ctx, hbonds)
+def plot_interactions(residue_interaction_tuples, selected_rows, ctx, hbonds):
     hbonds = list(hbonds.res1)
 
     # added this ugly list here to check which interaction have already been painted
@@ -527,8 +518,6 @@ def main(args):
     # here I use the plot_residue function to generate a dictionnary with coordinates of every residue that gets
     # plotted which is then use in plot_interactions to draw the lines between residues
     plot_interactions(residue_interaction_tuples, selected_rows, ctx, hbonds_data_frame)
-    plot_residues(selected_rows, ctx)
-    exit()
 
     if args.annotate:
         # gains_losses = list(decomp_table_data_frame.agg(lambda x: x.sum()))
@@ -539,6 +528,11 @@ def main(args):
         gains_losses = temp
     else:
         gains_losses = False
+
+    plot_residues(selected_rows, ctx, gains_losses)
+    exit()
+
+
 
     plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
                   ctx, gains_losses)
