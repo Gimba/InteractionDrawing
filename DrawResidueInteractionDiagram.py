@@ -236,15 +236,17 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows, exclusive=[])
 
     residue_plotting_coordinates = {}
     if exclusive:
-        circle_coords = generate_coordinate_circle(WIDTH / 2, 400, selected_rows.shape[0] + n_chains)
+        circle_coords = generate_coordinate_circle(WIDTH / 2, 400, selected_rows.shape[0] + n_chains - 1)
         counter = 0
         for k, v in residues_in_each_column.items():
+            if k == 2:
+                v -= 1
             residue_plotting_coordinates[k] = circle_coords[counter:v + counter]
 
             # introduces gap when a new chain get plotted
             counter += v + 1
         # plot selected residue in the middle
-        residue_plotting_coordinates[exclusive[0]][exclusive[1] - 1] = [WIDTH / 2, WIDTH / 2]
+        residue_plotting_coordinates[exclusive[0]].insert(exclusive[1] - 1, ([WIDTH / 2, WIDTH / 2]))
 
     else:
         for k, v in intra_column_y_coordinates.items():
