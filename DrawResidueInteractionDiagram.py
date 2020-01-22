@@ -494,7 +494,12 @@ def main(args):
     plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame)
 
     if args.annotate:
-        gains_losses = list(decomp_table_data_frame.agg(lambda x: x.sum()))
+        # gains_losses = list(decomp_table_data_frame.agg(lambda x: x.sum()))
+        gains_losses = decomp_table_data_frame.to_dict()
+        temp = gains_losses[residue_to_highlight.Id.iloc[0]]
+
+        temp[residue_to_highlight.Id.iloc[0]] = sum(temp.values())
+        gains_losses = temp
     else:
         gains_losses = False
 
