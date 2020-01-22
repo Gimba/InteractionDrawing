@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# Copyright (c) 2015 William Lees
+# Copyright (c) 2020 Martin Rosellen
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -82,23 +82,11 @@ def read_decomp_table_file(file_name):
     data_frame.dropna(axis=0, how='all', inplace=True)
     data_frame.dropna(axis=1, how='all', inplace=True)
 
-    #
-    # # only keep column that contains selected residue
-    # if exclusive:
-    #     data_frame = data_frame.loc[:, residue_to_highlight]
-    #     # since only one column is selected data_frame will be of type Series. This causes problems later and
-    #     # therefore it get transformed into a dataframe object again
-    #     data_frame = data_frame.to_frame()
-    #     data_frame = data_frame.drop(data_frame[data_frame[residue_to_highlight] == 0].index)
-
     return data_frame
 
 
 def get_residue_interaction_tuples(decomp_table_data_frame):
     interactions = {}
-
-    # only iterate over lower triangle of data frame matrix - Not used
-    # temp_data = decomp_table_data_frame.mask(np.triu(np.ones(decomp_table_data_frame.shape, dtype=np.bool_)))
 
     for row in decomp_table_data_frame.iterrows():
         dict_val = row[1].dropna().to_dict()
@@ -189,7 +177,14 @@ def generate_residue_plotting_coordinates(n_chains, selected_rows, exclusive=[])
     selected_rows['X_Coord'] = ""
     selected_rows['Y_Coord'] = ""
 
-    circle_coords = generate_coordinate_circle(WIDTH / 2, 400, selected_rows.shape[0] + n_chains - 1)
+    exclusive_chain_id = selected_rows.loc[exclusive,'Chain']
+    chain_residue_counts = selected_rows['Chain'].value_counts().to_dict()
+    if chain_residue_counts[exclusive_chain_id] == 1:
+        chain_substract = 2
+    else:
+        chain_substract = 1
+
+    circle_coords = generate_coordinate_circle(WIDTH / 2, 400, selected_rows.shape[0] + n_chains - chain_substract)
 
     # add a coordinate to each line in selected rows
     counter = 0
@@ -303,7 +298,7 @@ def main(args):
     parser.add_argument('-t', '--compare_thresh', help='Energy values must be higher than this threshold to be '
                                                        'considered (default 0.5 kcal/mol).', default=0.5)
     parser.add_argument('-c', '--compare_file', help='only display interactions that differ from those in this file')
-    parser.add_argument('-a', '--annotate', help='annotate residues with energy values')
+    parser.add_argument('-a', '--annotate', nargs='?', help='annotate residues with energy values', default=True)
     parser.add_argument('-m', '--highlight_residue', help='highlight interactions of this residue')
 
     args = parser.parse_args()
@@ -399,14 +394,6 @@ def main(args):
         gains_losses = False
 
     plot_residues(selected_rows, ctx, gains_losses)
-    exit()
-
-    plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
-                  ctx, gains_losses)
-
-    # replotting residues so that they overlay the interaction lines
-    plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
-                  ctx)
 
 
 if __name__ == '__main__':
