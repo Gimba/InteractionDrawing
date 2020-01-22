@@ -349,34 +349,39 @@ def draw_residue(ctx, x, y, text, annotation=False, highlight=False):
         ctx.set_font_size(FONT_SIZE)
 
 
-def plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping, ctx,
-                  annotate_list=[], residue_selection=[]):
-    residue_coordinates = {}
-    highlight = False
-    for col_id, coords in residue_plotting_coordinates.items():
-        residue_names = [r for r in residue_names_to_plot if r[1][0] == chain_column_id_mapping[col_id]]
-        residue_names = sorted(residue_names, key=lambda x: int(x[1][3:]))
-        # x = coords[0]
-        if annotate_list:
-            for coord, name, annotation in zip(coords, residue_names, annotate_list):
-                x = coord[0]
-                y = coord[1]
-                if name[0] in residue_selection:
-                    highlight = True
-                draw_residue(ctx, x, y, name[1], annotation, highlight)
-                residue_coordinates[name[0]] = [x, y]
-                highlight = False
-        else:
-            for coord, name in zip(coords, residue_names):
-                x = coord[0]
-                y = coord[1]
-                draw_residue(ctx, x, y, name[1])
-                residue_coordinates[name[0]] = [x, y]
+def plot_residues(selected_rows, ctx, annotate_list=[], residue_selection=[]):
+    for index, row in selected_rows.iterrows():
+        x = row['X_Coord']
+        y = row['Y_Coord']
+        name = row['Chain'] + ':' + res_codes[index[:3]] + row['Legend']
+        draw_residue(ctx, x, y, name)
+        # exit()
+    # residue_coordinates = {}
+    # highlight = False
+    # for col_id, coords in residue_plotting_coordinates.items():
+    #     residue_names = [r for r in residue_names_to_plot if r[1][0] == chain_column_id_mapping[col_id]]
+    #     residue_names = sorted(residue_names, key=lambda x: int(x[1][3:]))
+    #     # x = coords[0]
+    #     if annotate_list:
+    #         for coord, name, annotation in zip(coords, residue_names, annotate_list):
+    #             x = coord[0]
+    #             y = coord[1]
+    #             if name[0] in residue_selection:
+    #                 highlight = True
+    #             draw_residue(ctx, x, y, name[1], annotation, highlight)
+    #             residue_coordinates[name[0]] = [x, y]
+    #             highlight = False
+    #     else:
+    #         for coord, name in zip(coords, residue_names):
+    #             x = coord[0]
+    #             y = coord[1]
+    #             draw_residue(ctx, x, y, name[1])
+    #             residue_coordinates[name[0]] = [x, y]
 
-    return residue_coordinates
+    # return residue_coordinates
 
 
-def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds, residue_to_highlight=False):
+def plot_interactions(residue_interaction_tuples, selected_rows, ctx, hbonds)
     hbonds = list(hbonds.res1)
 
     # added this ugly list here to check which interaction have already been painted
@@ -397,8 +402,8 @@ def plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbon
             continue
         painted.append(r1)
 
-        coord1 = residue_coordinates[res1]
-        coord2 = residue_coordinates[res2]
+        coord1 = [selected_rows.loc[res1, 'X_Coord'], selected_rows.loc[res1, 'Y_Coord']]
+        coord2 = [selected_rows.loc[res2, 'X_Coord'], selected_rows.loc[res2, 'Y_Coord']]
         ctx.move_to(coord1[0], coord1[1])
         if r1 in hbonds:
             ctx.set_source_rgb(1, 0, 0)
@@ -512,7 +517,7 @@ def main(args):
 
         # calculate where the residues should be plotted for every column
         selected_rows = generate_residue_plotting_coordinates(n_chains, selected_rows,
-                                                              'ILE 26')
+                                                              'ILE  26')
     else:
         residue_plotting_coordinates = generate_residue_plotting_coordinates(n_chains, selected_rows)
 
@@ -521,10 +526,9 @@ def main(args):
 
     # here I use the plot_residue function to generate a dictionnary with coordinates of every residue that gets
     # plotted which is then use in plot_interactions to draw the lines between residues
-    residue_coordinates = plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
-                                        ctx)
-
-    plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame)
+    plot_interactions(residue_interaction_tuples, selected_rows, ctx, hbonds_data_frame)
+    plot_residues(selected_rows, ctx)
+    exit()
 
     if args.annotate:
         # gains_losses = list(decomp_table_data_frame.agg(lambda x: x.sum()))
