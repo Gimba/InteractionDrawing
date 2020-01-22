@@ -493,7 +493,6 @@ def main(args):
 
     plot_interactions(residue_interaction_tuples, residue_coordinates, ctx, hbonds_data_frame)
 
-    # replotting residues so that they overlay the interaction lines
     if args.annotate:
         gains_losses = list(decomp_table_data_frame.agg(lambda x: x.sum()))
     else:
@@ -501,6 +500,10 @@ def main(args):
 
     plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
                   ctx, gains_losses)
+
+    # replotting residues so that they overlay the interaction lines
+    plot_residues(residue_plotting_coordinates, residue_names_to_plot, chain_column_id_mapping,
+                  ctx)
 
 
 if __name__ == '__main__':
