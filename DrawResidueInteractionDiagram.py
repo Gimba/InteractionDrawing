@@ -241,8 +241,8 @@ def plot_residues(selected_rows, ctx, energy_values={}):
 
         # plot energy values next to residues
         if energy_values:
-            ctx.move_to(x + (RES_RADIUS * 0.35), y - (RES_RADIUS * 0.35))
-            ctx.set_font_size(FONT_SIZE * 0.75)
+            ctx.move_to(x + (RES_RADIUS * 0.5), y - (RES_RADIUS * 0.5))
+            ctx.set_font_size(FONT_SIZE * 0.9)
             ctx.show_text('{0:+.2f}'.format(energy_values[index]))
             ctx.set_font_size(FONT_SIZE)
 
