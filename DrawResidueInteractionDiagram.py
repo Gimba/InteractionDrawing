@@ -243,8 +243,11 @@ def plot_residues(selected_rows, ctx, energy_values={}):
         if energy_values:
             ctx.move_to(x + (RES_RADIUS * 0.5), y - (RES_RADIUS * 0.5))
             ctx.set_font_size(FONT_SIZE * 0.9)
+            ctx.select_font_face("Arial",
+                     cairo.FONT_SLANT_ITALIC,
+                     cairo.FONT_WEIGHT_NORMAL)
             ctx.show_text('{0:+.2f}'.format(energy_values[index]))
-            ctx.set_font_size(FONT_SIZE)
+            ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
 
 
 def plot_interactions(residue_interaction_tuples, selected_rows, ctx, hbonds):
@@ -360,6 +363,8 @@ def main(args):
     surface = cairo.PDFSurface(args.output, WIDTH, HEIGHT)
     ctx = cairo.Context(surface)
     ctx.set_font_size(FONT_SIZE)
+    ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+
 
     # get energy values that determine line thickness and what residues to connect
     residue_interaction_tuples = get_residue_interaction_tuples(decomp_table_data_frame)
